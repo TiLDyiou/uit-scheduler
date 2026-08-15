@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import { RotateCcw, Sun, Moon, GraduationCap } from "lucide-react";
+import { RotateCcw, Sun, Moon } from "lucide-react";
 
 interface HeaderProps {
   totalSections: number;
@@ -49,27 +48,13 @@ export default function Header({
     <header className="sticky top-0 z-40 border-b border-[var(--border-muted)] bg-[var(--bg-storm)]/80 backdrop-blur-xl transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
         {/* Left: Brand & UIT Title */}
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 flex items-center justify-center shrink-0 transition-transform hover:scale-105 duration-200">
-            <Image
-              src="/icon.png"
-              alt="UIT Scheduler Logo"
-              width={36}
-              height={36}
-              className="w-full h-full object-contain"
-              priority
-            />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h1 className="text-base sm:text-lg font-extrabold text-[var(--fg-editor)] tracking-tight truncate flex items-center gap-2">
-                UIT Scheduler
-              </h1>
-            </div>
-            <p className="text-xs text-[var(--fg-comments)] truncate flex items-center gap-1.5 font-medium">
-              <span>Trường Đại học Công nghệ Thông tin • ĐHQG-HCM</span>
-            </p>
-          </div>
+        <div className="min-w-0">
+          <h1 className="text-base sm:text-lg font-extrabold text-[var(--fg-editor)] tracking-tight truncate">
+            UIT Scheduler
+          </h1>
+          <p className="text-xs text-[var(--fg-comments)] truncate font-medium">
+            <span>Trường Đại học Công nghệ Thông tin • ĐHQG-HCM</span>
+          </p>
         </div>
 
         {/* Right: Stats, Theme toggle, Reset button */}
