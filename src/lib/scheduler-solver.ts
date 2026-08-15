@@ -187,15 +187,7 @@ export function solveSchedule({
   // 3. Pre-calculate which theory sections ACTUALLY require lab classes in the dataset
   const theoryRequiresLab = new Set<string>();
   for (const rawS of sections) {
-    const isLab =
-      rawS.is_lab ||
-      ["HT1", "HT2", "TG", "TH"].includes(rawS.teaching_type.toUpperCase()) ||
-      rawS.section_code.endsWith(".1") ||
-      rawS.section_code.endsWith(".2") ||
-      rawS.course_code.endsWith(".1") ||
-      rawS.course_code.endsWith(".2");
-
-    if (isLab) {
+    if (rawS.is_lab) {
       const baseSec = getBaseSectionCode(rawS.section_code);
       theoryRequiresLab.add(baseSec);
     }
@@ -220,15 +212,7 @@ export function solveSchedule({
     const labSections: Record<string, Section[]> = {};
 
     for (const s of sects) {
-      const isLab =
-        s.is_lab ||
-        ["HT1", "HT2", "TG", "TH"].includes(s.teaching_type.toUpperCase()) ||
-        s.section_code.endsWith(".1") ||
-        s.section_code.endsWith(".2") ||
-        s.course_code.endsWith(".1") ||
-        s.course_code.endsWith(".2");
-
-      if (isLab) {
+      if (s.is_lab) {
         const baseSec = getBaseSectionCode(s.section_code);
         if (!labSections[baseSec]) labSections[baseSec] = [];
         labSections[baseSec].push(s);
@@ -285,14 +269,14 @@ export function solveSchedule({
       if (pinnedCourse.theorySectionCode) {
         finalOptions = finalOptions.filter((opt) =>
           opt.sections.some(
-            (s) => !s.is_lab && s.section_code === pinnedCourse.theorySectionCode
+            (s) => s.section_code === pinnedCourse.theorySectionCode
           )
         );
       }
       if (pinnedCourse.labSectionCode) {
         finalOptions = finalOptions.filter((opt) =>
           opt.sections.some(
-            (s) => s.is_lab && s.section_code === pinnedCourse.labSectionCode
+            (s) => s.section_code === pinnedCourse.labSectionCode
           )
         );
       }

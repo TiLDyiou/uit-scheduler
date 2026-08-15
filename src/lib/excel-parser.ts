@@ -30,25 +30,40 @@ export function normalizeStr(s: unknown): string {
 export function parsePeriods(raw: unknown): number[] {
   if (raw === null || raw === undefined) return [];
   const s = String(raw).trim();
-  if (s === "*" || !s) return [];
+  if (s === "*" || !s || s === "0") return [];
 
-  // Comma-separated (e.g. periods >= 10: "11,12,13" or "1,2,3")
-  if (s.includes(",") || s.includes(";")) {
-    return s
-      .split(/[,;]/)
-      .map((x) => parseInt(x.trim(), 10))
-      .filter((n) => !isNaN(n) && n > 0 && n <= 16)
-      .sort((a, b) => a - b);
+  // Comma or semicolon or whitespace separated (e.g. "1, 2, 3" or "6,7,8,9,10")
+  if (s.includes(",") || s.includes(";") || s.includes(" ")) {
+    return Array.from(
+      new Set(
+        s
+          .split(/[,;\s]+/)
+          .map((x) => parseInt(x.trim(), 10))
+          .filter((n) => !isNaN(n) && n >= 1 && n <= 16),
+      ),
+    ).sort((a, b) => a - b);
   }
 
-  // Concatenated single digits (e.g. "123", "67890" where '0' = 10)
+  // Concatenated format (e.g. "123", "678910", "67890")
   const periods: number[] = [];
-  for (const ch of s) {
-    if (ch >= "0" && ch <= "9") {
-      periods.push(ch === "0" ? 10 : parseInt(ch, 10));
+  let i = 0;
+  while (i < s.length) {
+    if (s.slice(i, i + 2) === "10") {
+      periods.push(10);
+      i += 2;
+    } else {
+      const ch = s[i];
+      if (ch >= "1" && ch <= "9") {
+        periods.push(parseInt(ch, 10));
+      } else if (ch === "0") {
+        // standalone '0' in old format e.g. "67890" represents period 10
+        periods.push(10);
+      }
+      i++;
     }
   }
-  return periods.sort((a, b) => a - b);
+
+  return Array.from(new Set(periods)).sort((a, b) => a - b);
 }
 
 /**
@@ -115,10 +130,18 @@ function detectColumnMapping(headers: unknown[]): ColumnMapping | null {
   const normHeaders = headers.map(normalizeStr);
 
   const hasCourseCode = normHeaders.some(
-    (c) => c === "ma mh" || c === "ma mon" || c.includes("ma mh") || c.includes("ma mon hoc")
+    (c) =>
+      c === "ma mh" ||
+      c === "ma mon" ||
+      c.includes("ma mh") ||
+      c.includes("ma mon hoc"),
   );
   const hasSectionCode = normHeaders.some(
-    (c) => c === "ma lop" || c === "ma nhom" || c.includes("ma lop") || c.includes("ma nhom lop")
+    (c) =>
+      c === "ma lop" ||
+      c === "ma nhom" ||
+      c.includes("ma lop") ||
+      c.includes("ma nhom lop"),
   );
 
   if (!hasCourseCode && !hasSectionCode) {
@@ -126,11 +149,26 @@ function detectColumnMapping(headers: unknown[]): ColumnMapping | null {
   }
 
   normHeaders.forEach((c, idx) => {
-    if (c === "ma mh" || c === "ma mon" || c.includes("ma mh") || c.includes("ma mon hoc")) {
+    if (
+      c === "ma mh" ||
+      c === "ma mon" ||
+      c.includes("ma mh") ||
+      c.includes("ma mon hoc")
+    ) {
       colMap.courseCode = idx;
-    } else if (c === "ma lop" || c === "ma nhom" || c.includes("ma lop") || c.includes("ma nhom lop")) {
+    } else if (
+      c === "ma lop" ||
+      c === "ma nhom" ||
+      c.includes("ma lop") ||
+      c.includes("ma nhom lop")
+    ) {
       colMap.sectionCode = idx;
-    } else if (c === "ten mon hoc" || c === "ten mh" || c.includes("ten mon") || c.includes("ten mh")) {
+    } else if (
+      c === "ten mon hoc" ||
+      c === "ten mh" ||
+      c.includes("ten mon") ||
+      c.includes("ten mh")
+    ) {
       colMap.courseName = idx;
     } else if (
       c.includes("giang vien") ||
@@ -150,7 +188,11 @@ function detectColumnMapping(headers: unknown[]): ColumnMapping | null {
       colMap.credits = idx;
     } else if (c.includes("thuc hanh") || c.includes("lab")) {
       colMap.isLab = idx;
-    } else if (c.includes("htgd") || c.includes("hinh thuc") || c.includes("hinh thuc giang day")) {
+    } else if (
+      c.includes("htgd") ||
+      c.includes("hinh thuc") ||
+      c.includes("hinh thuc giang day")
+    ) {
       colMap.teachingType = idx;
     } else if (c === "thu" || c.includes("thu")) {
       colMap.dayOfWeek = idx;
@@ -162,13 +204,29 @@ function detectColumnMapping(headers: unknown[]): ColumnMapping | null {
       colMap.room = idx;
     } else if (c.includes("khoa hoc") || c === "khoa") {
       colMap.cohort = idx;
-    } else if (c.includes("khoa ql") || c.includes("khoa quan ly") || c === "khoa") {
+    } else if (
+      c.includes("khoa ql") ||
+      c.includes("khoa quan ly") ||
+      c === "khoa"
+    ) {
       colMap.department = idx;
-    } else if (c.includes("he dt") || c.includes("chuong trinh") || c.includes("he dao tao")) {
+    } else if (
+      c.includes("he dt") ||
+      c.includes("chuong trinh") ||
+      c.includes("he dao tao")
+    ) {
       colMap.program = idx;
-    } else if (c.includes("nbd") || c.includes("bat dau") || c.includes("ngay bd")) {
+    } else if (
+      c.includes("nbd") ||
+      c.includes("bat dau") ||
+      c.includes("ngay bd")
+    ) {
       colMap.startDate = idx;
-    } else if (c.includes("nkt") || c.includes("ket thuc") || c.includes("ngay kt")) {
+    } else if (
+      c.includes("nkt") ||
+      c.includes("ket thuc") ||
+      c.includes("ngay kt")
+    ) {
       colMap.endDate = idx;
     } else if (c.includes("ghi chu") || c.includes("ghichu")) {
       colMap.note = idx;
@@ -181,7 +239,9 @@ function detectColumnMapping(headers: unknown[]): ColumnMapping | null {
 /**
  * Pure client-side parser supporting 1-sheet (legacy) & 2-sheet (new UIT format) Excel files.
  */
-export function parseTkbExcel(fileBuffer: ArrayBuffer | Uint8Array): ParseExcelResult {
+export function parseTkbExcel(
+  fileBuffer: ArrayBuffer | Uint8Array,
+): ParseExcelResult {
   const wb = XLSX.read(fileBuffer, { type: "array", cellDates: true });
   const allSections: Section[] = [];
   const warnings: string[] = [];
@@ -204,7 +264,10 @@ export function parseTkbExcel(fileBuffer: ArrayBuffer | Uint8Array): ParseExcelR
     const ws = wb.Sheets[sheetName];
     if (!ws) continue;
 
-    const rawRows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: "" });
+    const rawRows = XLSX.utils.sheet_to_json<unknown[]>(ws, {
+      header: 1,
+      defval: "",
+    });
     if (!rawRows || rawRows.length === 0) continue;
 
     // Scan top 15 rows to find header row
@@ -238,7 +301,7 @@ export function parseTkbExcel(fileBuffer: ArrayBuffer | Uint8Array): ParseExcelR
       if (!courseCode) continue;
 
       const teachingType = String(
-        colMap.teachingType !== undefined ? row[colMap.teachingType] || "" : ""
+        colMap.teachingType !== undefined ? row[colMap.teachingType] || "" : "",
       ).trim();
 
       if (SKIP_HTGD.has(teachingType.toUpperCase())) {
@@ -246,14 +309,16 @@ export function parseTkbExcel(fileBuffer: ArrayBuffer | Uint8Array): ParseExcelR
         continue;
       }
 
-      const dayVal = colMap.dayOfWeek !== undefined ? row[colMap.dayOfWeek] : "";
+      const dayVal =
+        colMap.dayOfWeek !== undefined ? row[colMap.dayOfWeek] : "";
       const dayOfWeek = parseDayOfWeek(dayVal);
       if (!dayOfWeek) {
         stats.skippedUnscheduled++;
         continue;
       }
 
-      const periodsVal = colMap.periods !== undefined ? row[colMap.periods] : "";
+      const periodsVal =
+        colMap.periods !== undefined ? row[colMap.periods] : "";
       const periods = parsePeriods(periodsVal);
       if (periods.length === 0) {
         stats.skippedUnscheduled++;
@@ -261,7 +326,7 @@ export function parseTkbExcel(fileBuffer: ArrayBuffer | Uint8Array): ParseExcelR
       }
 
       const sectionCode = String(
-        colMap.sectionCode !== undefined ? row[colMap.sectionCode] || "" : ""
+        colMap.sectionCode !== undefined ? row[colMap.sectionCode] || "" : "",
       ).trim();
 
       const key = `${courseCode}_${sectionCode}_${dayOfWeek}_${periods.join("-")}`;
@@ -271,7 +336,7 @@ export function parseTkbExcel(fileBuffer: ArrayBuffer | Uint8Array): ParseExcelR
       seenSectionKeys.add(key);
 
       const courseName = String(
-        colMap.courseName !== undefined ? row[colMap.courseName] || "" : ""
+        colMap.courseName !== undefined ? row[colMap.courseName] || "" : "",
       ).trim();
 
       const creditsRaw = colMap.credits !== undefined ? row[colMap.credits] : 0;
@@ -297,25 +362,37 @@ export function parseTkbExcel(fileBuffer: ArrayBuffer | Uint8Array): ParseExcelR
         isLab = false;
       } else if (["HT1", "HT2", "TG", "TH"].includes(ttUpper)) {
         isLab = true;
-      } else if (/\.\d+$/.test(sectionCode) || /\.[A-Z0-9]+\.\d+$/.test(sectionCode)) {
+      } else if (
+        /\.\d+$/.test(sectionCode) ||
+        /\.[A-Z0-9]+\.\d+$/.test(sectionCode)
+      ) {
         isLab = true;
       } else {
         isLab = false;
       }
 
-      const biweeklyRaw = colMap.biweekly !== undefined ? row[colMap.biweekly] : "";
+      const biweeklyRaw =
+        colMap.biweekly !== undefined ? row[colMap.biweekly] : "";
       const biweekly = String(biweeklyRaw).trim() === "2";
 
-      const room = String(colMap.room !== undefined ? row[colMap.room] || "" : "").trim();
-      const capacity = parseCapacity(colMap.capacity !== undefined ? row[colMap.capacity] : 0);
+      const room = String(
+        colMap.room !== undefined ? row[colMap.room] || "" : "",
+      ).trim();
+      const capacity = parseCapacity(
+        colMap.capacity !== undefined ? row[colMap.capacity] : 0,
+      );
       const instructor = String(
-        colMap.instructor !== undefined ? row[colMap.instructor] || "" : ""
+        colMap.instructor !== undefined ? row[colMap.instructor] || "" : "",
       ).trim();
-      const program = String(colMap.program !== undefined ? row[colMap.program] || "" : "").trim();
+      const program = String(
+        colMap.program !== undefined ? row[colMap.program] || "" : "",
+      ).trim();
       const department = String(
-        colMap.department !== undefined ? row[colMap.department] || "" : ""
+        colMap.department !== undefined ? row[colMap.department] || "" : "",
       ).trim();
-      const note = String(colMap.note !== undefined ? row[colMap.note] || "" : "").trim();
+      const note = String(
+        colMap.note !== undefined ? row[colMap.note] || "" : "",
+      ).trim();
 
       const section: Section = {
         course_code: courseCode,
@@ -342,11 +419,15 @@ export function parseTkbExcel(fileBuffer: ArrayBuffer | Uint8Array): ParseExcelR
     }
   }
 
-  const uniqueCoursesSet = new Set(allSections.map((s) => s.course_code.replace(/\.[12]$/, "")));
+  const uniqueCoursesSet = new Set(
+    allSections.map((s) => s.course_code.replace(/\.[12]$/, "")),
+  );
   stats.uniqueCourses = uniqueCoursesSet.size;
 
   if (allSections.length === 0) {
-    warnings.push("Không tìm thấy dữ liệu lớp học nào hợp lệ trong file Excel.");
+    warnings.push(
+      "Không tìm thấy dữ liệu lớp học nào hợp lệ trong file Excel.",
+    );
   }
 
   return {

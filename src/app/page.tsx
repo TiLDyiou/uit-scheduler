@@ -11,7 +11,7 @@ import { Section, TimeSlot, ScheduleSolution, StepType, PinnedCourseSection } fr
 import { solveSchedule } from "@/lib/scheduler-solver";
 import { AlertCircle, X } from "lucide-react";
 
-const STORAGE_KEY = "uit_scheduler_state_v2";
+const STORAGE_KEY = "uit_scheduler_state_v4";
 
 export default function SchedulerPage() {
   const [isClient, setIsClient] = useState(false);
@@ -131,7 +131,7 @@ export default function SchedulerPage() {
         setWarnings(result.warnings);
 
         if (result.solutions.length === 0) {
-          const hasBusySlots = slots && slots.length < 70;
+          const hasBusySlots = slots && slots.length < 60;
           const msg = hasBusySlots
             ? "Không xếp được lịch học nào do các lớp (hoặc lớp cố định) bị trùng với khung giờ bận bạn đã chọn. Vui lòng mở rộng khung giờ rảnh (bỏ bớt các ô đỏ) hoặc đổi lớp cố định."
             : "Không tìm được phương án xếp lịch không trùng cho các môn/lớp đã chọn. Vui lòng quay lại bước trước để thay đổi danh sách môn học hoặc đổi mã lớp cố định.";
