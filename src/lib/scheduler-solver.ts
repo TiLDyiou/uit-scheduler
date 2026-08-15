@@ -123,7 +123,7 @@ export function solveSchedule({
   available_slots,
   pinned_sections = {},
   pinned_section_codes = [],
-  max_solutions = 7,
+  max_solutions = 100,
 }: SolveRequest): SolveResult {
   const startTime = typeof performance !== "undefined" ? performance.now() : Date.now();
   const warnings: string[] = [];
@@ -203,15 +203,16 @@ export function solveSchedule({
 
   // 4. Build compatible CourseOption items (Theory + Lab pairs)
   const courseOptions: Record<string, CourseOption[]> = {};
+  const courseLevelWarnings: Record<string, string> = {};
   let totalOptionsCount = 0;
 
   for (const cc of cleanCourseCodes) {
     const sects = validSectionsByCourse[cc] || [];
     if (sects.length === 0) {
       const ccName = getCourseDisplayName(cc);
-      warnings.push(
-        `Không thể xếp môn ${ccName !== cc ? `${cc} (${ccName})` : cc} vì toàn bộ các lớp của môn này đều trùng với khung giờ bận của bạn.`
-      );
+      const msg = `Không thể xếp môn ${ccName !== cc ? `${cc} (${ccName})` : cc} vì toàn bộ các lớp của môn này đều trùng với khung giờ bận của bạn.`;
+      warnings.push(msg);
+      courseLevelWarnings[cc] = msg;
       continue;
     }
 
@@ -304,9 +305,9 @@ export function solveSchedule({
           .filter(Boolean)
           .join(", ");
         const ccName = getCourseDisplayName(cc);
-        warnings.push(
-          `Lớp cố định của môn ${ccName !== cc ? `${cc} (${ccName})` : cc} (${pinnedDesc}) bị trùng lịch học hoặc rơi vào khung giờ bận của bạn.`
-        );
+        const msg = `Lớp cố định của môn ${ccName !== cc ? `${cc} (${ccName})` : cc} (${pinnedDesc}) bị trùng lịch học hoặc rơi vào khung giờ bận của bạn.`;
+        warnings.push(msg);
+        courseLevelWarnings[cc] = msg;
       }
     } else if (pinned_section_codes.length > 0) {
       const pinnedForCourse = pinned_section_codes.filter((p) =>
@@ -428,9 +429,10 @@ export function solveSchedule({
       const ccName = getCourseDisplayName(cc);
       const ccLabel = ccName !== cc ? `${cc} (${ccName})` : cc;
       const reason =
-        conflictingCourseNames.size > 0
+        courseLevelWarnings[cc] ||
+        (conflictingCourseNames.size > 0
           ? `Môn ${ccLabel} bị trùng lịch với: ${Array.from(conflictingCourseNames).join(", ")}`
-          : `Không thể xếp môn ${ccLabel} do trùng giờ học`;
+          : `Không thể xếp môn ${ccLabel} do trùng giờ học`);
 
       backtrack(
         idx + 1,

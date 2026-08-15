@@ -126,7 +126,6 @@ export default function SchedulerPage() {
           sections,
           available_slots: slots,
           pinned_sections: pinnedSections,
-          max_solutions: 7,
         });
 
         setWarnings(result.warnings);

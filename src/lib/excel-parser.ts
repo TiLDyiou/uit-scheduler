@@ -278,18 +278,30 @@ export function parseTkbExcel(fileBuffer: ArrayBuffer | Uint8Array): ParseExcelR
       let credits = parseInt(String(creditsRaw || 0), 10);
       if (isNaN(credits) || credits < 0) credits = 0;
 
-      const isLabRaw = colMap.isLab !== undefined ? row[colMap.isLab] : 0;
-      const isLabCol = Boolean(isLabRaw && isLabRaw !== "0" && isLabRaw !== 0);
+      // UIT rule for determining whether a row is a Lab (TH) or Theory (LT) section:
+      // 1. If in a sheet explicitly named TH / Thực hành -> is_lab = true
+      // 2. If in a sheet explicitly named LT / Lý thuyết -> is_lab = false
+      // 3. Otherwise (1-sheet file):
+      //    - If HTGD is "LT" -> is_lab = false
+      //    - If HTGD is "HT1", "HT2", "TG", "TH" -> is_lab = true
+      //    - If section code ends with .1, .2, .3, .TTNT.1 -> is_lab = true
+      const sLower = sheetName.toLowerCase();
+      const ttUpper = teachingType.toUpperCase();
+      let isLab = false;
 
-      // UIT rule: Lab classes are either marked in TH column, or HTGD is HT1/HT2/TG, or section code has .1/.2
-      const isLab =
-        isLabCol ||
-        ["HT1", "HT2", "TG", "TH"].includes(teachingType.toUpperCase()) ||
-        sectionCode.endsWith(".1") ||
-        sectionCode.endsWith(".2") ||
-        courseCode.endsWith(".1") ||
-        courseCode.endsWith(".2") ||
-        sheetName.toLowerCase().includes("th");
+      if (sLower.includes("th") || sLower.includes("thuc hanh")) {
+        isLab = true;
+      } else if (sLower.includes("lt") || sLower.includes("ly thuyet")) {
+        isLab = false;
+      } else if (ttUpper === "LT") {
+        isLab = false;
+      } else if (["HT1", "HT2", "TG", "TH"].includes(ttUpper)) {
+        isLab = true;
+      } else if (/\.\d+$/.test(sectionCode) || /\.[A-Z0-9]+\.\d+$/.test(sectionCode)) {
+        isLab = true;
+      } else {
+        isLab = false;
+      }
 
       const biweeklyRaw = colMap.biweekly !== undefined ? row[colMap.biweekly] : "";
       const biweekly = String(biweeklyRaw).trim() === "2";

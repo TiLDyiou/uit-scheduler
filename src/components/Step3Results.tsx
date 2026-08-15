@@ -216,27 +216,14 @@ export default function Step3Results({
     }
   });
 
+  const allAlerts = Array.from(
+    new Set([...(warnings || []), ...(activeSolution.missing_courses || [])])
+  );
+
   return (
     <div className="space-y-6 animate-fade-in-up">
-      {/* Global Warnings if any course had no solution */}
-      {warnings.length > 0 && (
-        <div className="p-4 rounded-2xl bg-[var(--color-yellow)]/10 border border-[var(--color-yellow)]/30 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-[var(--color-yellow)] shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <h4 className="text-xs font-bold text-[var(--fg-editor)]">
-              Lưu ý về lịch xếp:
-            </h4>
-            <ul className="text-xs text-[var(--fg-markdown)] list-disc list-inside space-y-0.5">
-              {warnings.map((w, idx) => (
-                <li key={idx}>{w}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
-      {/* Partial solution missing courses alert */}
-      {activeSolution.missing_courses.length > 0 && (
+      {/* Unified Missing Courses / Warning Alert */}
+      {allAlerts.length > 0 && (
         <div className="p-4 rounded-2xl bg-[var(--color-red)]/10 border border-[var(--color-red)]/30 flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-[var(--color-red)] shrink-0 mt-0.5" />
           <div className="space-y-1">
@@ -244,8 +231,8 @@ export default function Step3Results({
               Môn học không thể xếp trong phương án này:
             </h4>
             <ul className="text-xs text-[var(--fg-markdown)] list-disc list-inside space-y-0.5">
-              {activeSolution.missing_courses.map((m, idx) => (
-                <li key={idx}>{m}</li>
+              {allAlerts.map((msg, idx) => (
+                <li key={idx}>{msg}</li>
               ))}
             </ul>
           </div>
