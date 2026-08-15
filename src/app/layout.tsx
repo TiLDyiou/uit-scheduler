@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     "Đại học Công nghệ Thông tin",
     "TKB",
   ],
-  authors: [{ name: "UIT Student Community" }],
+  authors: [{ name: "Một sinh viên UIT" }],
 };
 
 export const viewport: Viewport = {
