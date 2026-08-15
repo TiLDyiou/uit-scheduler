@@ -48,7 +48,7 @@ export default function Step3Results({
   const [mounted, setMounted] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [currentSolutions, setCurrentSolutions] = useState<ScheduleSolution[]>(solutions);
-  const [timetableTheme, setTimetableTheme] = useState<"light" | "dark">("dark");
+  const [timetableTheme, setTimetableTheme] = useState<"light" | "dark">("light");
   const [exportingImage, setExportingImage] = useState(false);
   const [swapTargetSection, setSwapTargetSection] = useState<Section | null>(null);
 

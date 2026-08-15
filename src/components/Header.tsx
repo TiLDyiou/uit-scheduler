@@ -14,16 +14,11 @@ export default function Header({
   uniqueCourses,
   onReset,
 }: HeaderProps) {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
 
   useEffect(() => {
-    const isDark =
-      document.documentElement.classList.contains("dark") ||
-      (!("theme" in localStorage) &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches) ||
-      localStorage.getItem("theme") === "dark";
-
-    if (isDark) {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
       document.documentElement.classList.add("dark");
       setTheme("dark");
     } else {
