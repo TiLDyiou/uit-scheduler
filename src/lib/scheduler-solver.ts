@@ -439,7 +439,41 @@ export function solveSchedule({
     if (rawSolutions.length > 0) break;
   }
 
-  // 6. Enrich, score and rank solutions
+  // 6. Enrich generic missing_courses messages with actual conflict details
+  for (const sol of rawSolutions) {
+    sol.missing_courses = sol.missing_courses.map((reason) => {
+      if (reason.includes("bị trùng lịch với") || reason.includes("khung giờ bận")) {
+        return reason;
+      }
+      const codeMatch = reason.match(/môn (\S+)/);
+      if (!codeMatch) return reason;
+      const cc = getBaseCourseCode(codeMatch[1]);
+      const opts = courseOptions[cc];
+      if (!opts || opts.length === 0) return reason;
+
+      const conflictNames = new Set<string>();
+      for (const opt of opts) {
+        for (const optSec of opt.sections) {
+          for (const solSec of sol.sections) {
+            if (doSectionsOverlap(optSec, solSec)) {
+              conflictNames.add(
+                solSec.course_name || getCourseDisplayName(solSec.course_code)
+              );
+            }
+          }
+        }
+      }
+
+      if (conflictNames.size > 0) {
+        const ccName = getCourseDisplayName(cc);
+        const ccLabel = ccName !== cc ? `${cc} (${ccName})` : cc;
+        return `Môn ${ccLabel} bị trùng lịch với: ${Array.from(conflictNames).join(", ")}`;
+      }
+      return reason;
+    });
+  }
+
+  // 7. Enrich, score and rank solutions
   const scoredSolutions: ScheduleSolution[] = rawSolutions.map((sol, index) => {
     const analysis = scoreSolution(sol.sections);
     return {

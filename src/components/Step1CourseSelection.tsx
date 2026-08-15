@@ -493,7 +493,10 @@ export default function Step1CourseSelection({
                                 <div className="flex items-center gap-1.5 text-[var(--color-blue)] font-bold truncate">
                                   <Lock className="w-3 h-3 shrink-0" />
                                   <span className="truncate">
-                                    Cố định: {[pin.theorySectionCode, pin.labSectionCode].filter(Boolean).join(" + ")}
+                                    Cố định:{" "}
+                                    {[pin.theorySectionCode, pin.labSectionCode]
+                                      .filter(Boolean)
+                                      .join(" + ")}
                                   </span>
                                 </div>
                               ) : (
@@ -827,7 +830,9 @@ export default function Step1CourseSelection({
                         <span>
                           Đang cố định:{" "}
                           <strong className="text-[var(--color-blue)] font-mono">
-                            {[pin.theorySectionCode, pin.labSectionCode].filter(Boolean).join(" + ")}
+                            {[pin.theorySectionCode, pin.labSectionCode]
+                              .filter(Boolean)
+                              .join(" + ")}
                           </strong>
                         </span>
                       ) : (
@@ -1064,7 +1069,7 @@ export default function Step1CourseSelection({
                       </span>
                     ) : (
                       <span>
-                        Chế độ: <strong>Tự động tìm lớp tối ưu</strong>
+                        Chế độ: <strong>Tự động tìm lớp</strong>
                       </span>
                     )}
                   </div>
