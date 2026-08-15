@@ -1,0 +1,345 @@
+import * as XLSX from "xlsx";
+import { Section, ParseExcelResult } from "@/types/scheduler";
+
+const SKIP_HTGD = new Set(["KLTN", "TTTN", "ĐA", "KHOA_LUAN"]);
+
+/**
+ * Remove Vietnamese accents and special characters for fuzzy matching column names
+ */
+export function normalizeStr(s: unknown): string {
+  if (s === null || s === undefined) return "";
+  return String(s)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "d")
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Parse periods string into sorted array of period numbers.
+ * Examples:
+ *  "123"      -> [1, 2, 3]
+ *  "6789"     -> [6, 7, 8, 9]
+ *  "67890"    -> [6, 7, 8, 9, 10] (0 means period 10)
+ *  "90"       -> [9, 10]
+ *  "11,12,13" -> [11, 12, 13]
+ *  "1, 2, 3"  -> [1, 2, 3]
+ */
+export function parsePeriods(raw: unknown): number[] {
+  if (raw === null || raw === undefined) return [];
+  const s = String(raw).trim();
+  if (s === "*" || !s) return [];
+
+  // Comma-separated (e.g. periods >= 10: "11,12,13" or "1,2,3")
+  if (s.includes(",") || s.includes(";")) {
+    return s
+      .split(/[,;]/)
+      .map((x) => parseInt(x.trim(), 10))
+      .filter((n) => !isNaN(n) && n > 0 && n <= 16)
+      .sort((a, b) => a - b);
+  }
+
+  // Concatenated single digits (e.g. "123", "67890" where '0' = 10)
+  const periods: number[] = [];
+  for (const ch of s) {
+    if (ch >= "0" && ch <= "9") {
+      periods.push(ch === "0" ? 10 : parseInt(ch, 10));
+    }
+  }
+  return periods.sort((a, b) => a - b);
+}
+
+/**
+ * Parse capacity from string formatted like "50(0)" or "40"
+ */
+export function parseCapacity(raw: unknown): number {
+  if (raw === null || raw === undefined) return 0;
+  const match = String(raw).match(/(\d+)/);
+  return match ? parseInt(match[1], 10) : 0;
+}
+
+/**
+ * Parse day of week (2=Mon ... 7=Sat, 8=Sun)
+ */
+export function parseDayOfWeek(raw: unknown): number | null {
+  if (raw === null || raw === undefined) return null;
+  const s = String(raw).trim().toLowerCase();
+  if (s === "*" || !s) return null;
+
+  if (s === "cn" || s.includes("chu nhat") || s === "8" || s === "cn.") {
+    return 8;
+  }
+
+  const num = parseInt(s, 10);
+  if (!isNaN(num) && num >= 2 && num <= 8) {
+    return num;
+  }
+
+  // Check strings like "thu 2", "t2"
+  const m = s.match(/[t|thứ]\s*([2-8])/i);
+  if (m) {
+    return parseInt(m[1], 10);
+  }
+
+  return null;
+}
+
+interface ColumnMapping {
+  courseCode?: number;
+  sectionCode?: number;
+  courseName?: number;
+  instructor?: number;
+  capacity?: number;
+  credits?: number;
+  isLab?: number;
+  teachingType?: number;
+  dayOfWeek?: number;
+  periods?: number;
+  biweekly?: number;
+  room?: number;
+  cohort?: number;
+  department?: number;
+  program?: number;
+  startDate?: number;
+  endDate?: number;
+  note?: number;
+}
+
+/**
+ * Detect column indices by inspecting header rows
+ */
+function detectColumnMapping(headers: unknown[]): ColumnMapping | null {
+  const colMap: ColumnMapping = {};
+  const normHeaders = headers.map(normalizeStr);
+
+  const hasCourseCode = normHeaders.some(
+    (c) => c === "ma mh" || c === "ma mon" || c.includes("ma mh") || c.includes("ma mon hoc")
+  );
+  const hasSectionCode = normHeaders.some(
+    (c) => c === "ma lop" || c === "ma nhom" || c.includes("ma lop") || c.includes("ma nhom lop")
+  );
+
+  if (!hasCourseCode && !hasSectionCode) {
+    return null;
+  }
+
+  normHeaders.forEach((c, idx) => {
+    if (c === "ma mh" || c === "ma mon" || c.includes("ma mh") || c.includes("ma mon hoc")) {
+      colMap.courseCode = idx;
+    } else if (c === "ma lop" || c === "ma nhom" || c.includes("ma lop") || c.includes("ma nhom lop")) {
+      colMap.sectionCode = idx;
+    } else if (c === "ten mon hoc" || c === "ten mh" || c.includes("ten mon") || c.includes("ten mh")) {
+      colMap.courseName = idx;
+    } else if (
+      c.includes("giang vien") ||
+      c.includes("tro giang") ||
+      c.includes("gv") ||
+      c === "ten gv"
+    ) {
+      colMap.instructor = idx;
+    } else if (c.includes("si so") || c.includes("sl sv")) {
+      colMap.capacity = idx;
+    } else if (
+      c.includes("so tc") ||
+      c.includes("to tc") ||
+      c.includes("tin chi") ||
+      c === "stc"
+    ) {
+      colMap.credits = idx;
+    } else if (c.includes("thuc hanh") || c.includes("lab")) {
+      colMap.isLab = idx;
+    } else if (c.includes("htgd") || c.includes("hinh thuc") || c.includes("hinh thuc giang day")) {
+      colMap.teachingType = idx;
+    } else if (c === "thu" || c.includes("thu")) {
+      colMap.dayOfWeek = idx;
+    } else if (c === "tiet" || c.includes("tiet")) {
+      colMap.periods = idx;
+    } else if (c.includes("cach tuan")) {
+      colMap.biweekly = idx;
+    } else if (c.includes("phong") || c === "phong hoc") {
+      colMap.room = idx;
+    } else if (c.includes("khoa hoc") || c === "khoa") {
+      colMap.cohort = idx;
+    } else if (c.includes("khoa ql") || c.includes("khoa quan ly") || c === "khoa") {
+      colMap.department = idx;
+    } else if (c.includes("he dt") || c.includes("chuong trinh") || c.includes("he dao tao")) {
+      colMap.program = idx;
+    } else if (c.includes("nbd") || c.includes("bat dau") || c.includes("ngay bd")) {
+      colMap.startDate = idx;
+    } else if (c.includes("nkt") || c.includes("ket thuc") || c.includes("ngay kt")) {
+      colMap.endDate = idx;
+    } else if (c.includes("ghi chu") || c.includes("ghichu")) {
+      colMap.note = idx;
+    }
+  });
+
+  return colMap.courseCode !== undefined ? colMap : null;
+}
+
+/**
+ * Pure client-side parser supporting 1-sheet (legacy) & 2-sheet (new UIT format) Excel files.
+ */
+export function parseTkbExcel(fileBuffer: ArrayBuffer | Uint8Array): ParseExcelResult {
+  const wb = XLSX.read(fileBuffer, { type: "array", cellDates: true });
+  const allSections: Section[] = [];
+  const warnings: string[] = [];
+
+  const stats = {
+    totalSheets: wb.SheetNames.length,
+    parsedSheets: 0,
+    sheetNames: wb.SheetNames,
+    totalRows: 0,
+    uniqueCourses: 0,
+    theoryCount: 0,
+    labCount: 0,
+    skippedUnscheduled: 0,
+    skippedThesis: 0,
+  };
+
+  const seenSectionKeys = new Set<string>();
+
+  for (const sheetName of wb.SheetNames) {
+    const ws = wb.Sheets[sheetName];
+    if (!ws) continue;
+
+    const rawRows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: "" });
+    if (!rawRows || rawRows.length === 0) continue;
+
+    // Scan top 15 rows to find header row
+    let headerRowIdx = -1;
+    let colMap: ColumnMapping | null = null;
+
+    for (let r = 0; r < Math.min(15, rawRows.length); r++) {
+      const row = rawRows[r];
+      if (!Array.isArray(row)) continue;
+
+      const detected = detectColumnMapping(row);
+      if (detected) {
+        headerRowIdx = r;
+        colMap = detected;
+        break;
+      }
+    }
+
+    if (headerRowIdx === -1 || !colMap || colMap.courseCode === undefined) {
+      // Not a course schedule sheet, skip quietly
+      continue;
+    }
+
+    stats.parsedSheets++;
+
+    for (let r = headerRowIdx + 1; r < rawRows.length; r++) {
+      const row = rawRows[r];
+      if (!Array.isArray(row) || row.length === 0) continue;
+
+      const courseCode = String(row[colMap.courseCode] || "").trim();
+      if (!courseCode) continue;
+
+      const teachingType = String(
+        colMap.teachingType !== undefined ? row[colMap.teachingType] || "" : ""
+      ).trim();
+
+      if (SKIP_HTGD.has(teachingType.toUpperCase())) {
+        stats.skippedThesis++;
+        continue;
+      }
+
+      const dayVal = colMap.dayOfWeek !== undefined ? row[colMap.dayOfWeek] : "";
+      const dayOfWeek = parseDayOfWeek(dayVal);
+      if (!dayOfWeek) {
+        stats.skippedUnscheduled++;
+        continue;
+      }
+
+      const periodsVal = colMap.periods !== undefined ? row[colMap.periods] : "";
+      const periods = parsePeriods(periodsVal);
+      if (periods.length === 0) {
+        stats.skippedUnscheduled++;
+        continue;
+      }
+
+      const sectionCode = String(
+        colMap.sectionCode !== undefined ? row[colMap.sectionCode] || "" : ""
+      ).trim();
+
+      const key = `${courseCode}_${sectionCode}_${dayOfWeek}_${periods.join("-")}`;
+      if (seenSectionKeys.has(key)) {
+        continue; // duplicate row
+      }
+      seenSectionKeys.add(key);
+
+      const courseName = String(
+        colMap.courseName !== undefined ? row[colMap.courseName] || "" : ""
+      ).trim();
+
+      const creditsRaw = colMap.credits !== undefined ? row[colMap.credits] : 0;
+      let credits = parseInt(String(creditsRaw || 0), 10);
+      if (isNaN(credits) || credits < 0) credits = 0;
+
+      const isLabRaw = colMap.isLab !== undefined ? row[colMap.isLab] : 0;
+      const isLabCol = Boolean(isLabRaw && isLabRaw !== "0" && isLabRaw !== 0);
+
+      // UIT rule: Lab classes are either marked in TH column, or HTGD is HT1/HT2/TG, or section code has .1/.2
+      const isLab =
+        isLabCol ||
+        ["HT1", "HT2", "TG", "TH"].includes(teachingType.toUpperCase()) ||
+        sectionCode.endsWith(".1") ||
+        sectionCode.endsWith(".2") ||
+        courseCode.endsWith(".1") ||
+        courseCode.endsWith(".2") ||
+        sheetName.toLowerCase().includes("th");
+
+      const biweeklyRaw = colMap.biweekly !== undefined ? row[colMap.biweekly] : "";
+      const biweekly = String(biweeklyRaw).trim() === "2";
+
+      const room = String(colMap.room !== undefined ? row[colMap.room] || "" : "").trim();
+      const capacity = parseCapacity(colMap.capacity !== undefined ? row[colMap.capacity] : 0);
+      const instructor = String(
+        colMap.instructor !== undefined ? row[colMap.instructor] || "" : ""
+      ).trim();
+      const program = String(colMap.program !== undefined ? row[colMap.program] || "" : "").trim();
+      const department = String(
+        colMap.department !== undefined ? row[colMap.department] || "" : ""
+      ).trim();
+      const note = String(colMap.note !== undefined ? row[colMap.note] || "" : "").trim();
+
+      const section: Section = {
+        course_code: courseCode,
+        section_code: sectionCode || `${courseCode}.01`,
+        course_name: courseName || courseCode,
+        credits,
+        is_lab: isLab,
+        teaching_type: teachingType || (isLab ? "HT1" : "LT"),
+        day_of_week: dayOfWeek,
+        periods,
+        biweekly,
+        room: room === "*" ? "" : room,
+        capacity,
+        instructor_name: instructor === "*" ? "" : instructor,
+        program,
+        department,
+        note,
+      };
+
+      allSections.push(section);
+      stats.totalRows++;
+      if (isLab) stats.labCount++;
+      else stats.theoryCount++;
+    }
+  }
+
+  const uniqueCoursesSet = new Set(allSections.map((s) => s.course_code.replace(/\.[12]$/, "")));
+  stats.uniqueCourses = uniqueCoursesSet.size;
+
+  if (allSections.length === 0) {
+    warnings.push("Không tìm thấy dữ liệu lớp học nào hợp lệ trong file Excel.");
+  }
+
+  return {
+    sections: allSections,
+    stats,
+    warnings,
+  };
+}

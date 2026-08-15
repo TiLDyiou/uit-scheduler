@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# UIT Scheduler
 
-## Getting Started
+> Hệ thống hỗ trợ xếp thời khóa biểu tự động, thông minh dành riêng cho sinh viên **Trường Đại học Công nghệ Thông tin, ĐHQG-HCM (UIT)**.
+> Xử lý 100% trên Client-side (Trình duyệt) - Không cần backend server.
 
-First, run the development server:
+---
+
+## Tính Năng Nổi Bật
+
+- **Nhập file Excel TKB chính thức của UIT**:
+  - Hỗ trợ file Excel TKB 1 sheet (gộp) hoặc 2 sheet riêng biệt (`TKB LT` & `TKB TH`).
+  - Tự động nhận diện cột (Mã MH, Mã lớp, Tên môn, Thứ, Tiết, Phòng, Giảng viên, Cách tuần,...).
+- **Thuật toán CSP Solver tối ưu trên Frontend**:
+  - Tự động ghép nối chuẩn xác giữa **Lớp Lý thuyết (LT)** và **Lớp Thực hành (TH)** tương ứng.
+  - Hỗ trợ cố định lớp cụ thể (Chỉ định riêng LT, riêng TH hoặc cả hai) - Thuật toán tự động tìm phần còn lại.
+  - Phân tích xung đột và chẩn đoán trùng lịch chi tiết kèm tên đầy đủ của môn học.
+- **Tùy chọn khung giờ rảnh / bận linh hoạt**:
+  - Đánh dấu khung giờ bận (Né buổi sáng, Né buổi chiều, Nghỉ Thứ 7,...).
+  - Khung giờ tiết 1..10 chuẩn xác theo quy định của UIT.
+- **Giao diện Cao cấp & Theme Linh Hoạt**:
+  - Bảng màu kép: **Catppuccin Latte** (Giao diện Sáng) & **Tokyo Night** (Giao diện Tối).
+- **Tương tác trực tiếp trên Thời Khóa Biểu**:
+  - Nhấp trực tiếp vào ô môn học để đổi nhanh sang lớp khác mà không cần làm lại từ đầu.
+- **Xuất ảnh chất lượng cao (.PNG)**:
+  - Tải ảnh thời khóa biểu siêu nét (hỗ trợ cả nền Sáng và Tối).
+
+---
+
+## Công Nghệ Sử Dụng
+
+- **Framework**: [Next.js 16 (App Router)](https://nextjs.org/) + [React 19](https://react.dev/)
+- **Ngôn ngữ**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Xử lý Excel**: [xlsx](https://sheetjs.com/)
+- **Export ảnh**: [html-to-image](https://github.com/bubkoo/html-to-image)
+- **Hiệu ứng**: [canvas-confetti](https://github.com/catdad/canvas-confetti)
+
+---
+
+## Cài Đặt & Chạy Cục Bộ
+
+### 1. Yêu cầu hệ thống
+
+- [Node.js](https://nodejs.org/) (phiên bản 18 trở lên)
+- Trình quản lý gói `npm`, `pnpm` hoặc `yarn`
+
+### 2. Cài đặt các gói phụ thuộc
+
+```bash
+npm install
+```
+
+### 3. Chạy môi trường phát triển (Dev)
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Mở trình duyệt và truy cập: [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 4. Build phiên bản Production
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Hướng Dẫn Sử Dụng
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Bước 1 - Chọn Môn & Lớp**:
+   - Tải file Excel TKB do phòng đào tạo UIT công bố lên hệ thống.
+   - Tìm kiếm và chọn các môn bạn muốn đăng ký học.
+   - *(Tùy chọn)* Nhấp vào biểu tượng mắt để khóa mã lớp cụ thể nếu muốn.
+2. **Bước 2 - Chọn Khung Giờ**:
+   - Quét chọn các tiết bận bạn muốn né (màu đỏ).
+   - Nhấp **Tìm Lịch Học Tối Ưu**.
+3. **Bước 3 - Xem & Xuất TKB**:
+   - Xem các phương án xếp lịch không trùng.
+   - Chuyển đổi giữa chế độ **Bảng Sáng** / **Bảng Tối**.
+   - Nhấp **Xuất Ảnh (.png)** để lưu về máy.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Bản Quyền & Giấy Phép
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Phát triển bởi sinh viên vì cộng đồng sinh viên UIT.
