@@ -101,6 +101,36 @@ export function parseDayOfWeek(raw: unknown): number | null {
   return null;
 }
 
+/**
+ * Robust date formatting for Excel date serials, Date objects, or string dates
+ */
+export function formatExcelDate(val: unknown): string {
+  if (!val) return "";
+  if (val instanceof Date && !isNaN(val.getTime())) {
+    const d = String(val.getDate()).padStart(2, "0");
+    const m = String(val.getMonth() + 1).padStart(2, "0");
+    const y = val.getFullYear();
+    return `${d}/${m}/${y}`;
+  }
+  if (typeof val === "number" && val > 20000 && val < 60000) {
+    const jsDate = new Date(Math.round((val - 25569) * 86400 * 1000));
+    if (!isNaN(jsDate.getTime())) {
+      const d = String(jsDate.getDate()).padStart(2, "0");
+      const m = String(jsDate.getMonth() + 1).padStart(2, "0");
+      const y = jsDate.getFullYear();
+      return `${d}/${m}/${y}`;
+    }
+  }
+  const s = String(val).trim();
+  if (!s || s === "*") return "";
+  const ymdMatch = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (ymdMatch) {
+    const [, y, m, d] = ymdMatch;
+    return `${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`;
+  }
+  return s;
+}
+
 interface ColumnMapping {
   courseCode?: number;
   sectionCode?: number;
@@ -393,6 +423,14 @@ export function parseTkbExcel(
       const note = String(
         colMap.note !== undefined ? row[colMap.note] || "" : "",
       ).trim();
+      const startDate =
+        colMap.startDate !== undefined
+          ? formatExcelDate(row[colMap.startDate])
+          : "";
+      const endDate =
+        colMap.endDate !== undefined
+          ? formatExcelDate(row[colMap.endDate])
+          : "";
 
       const section: Section = {
         course_code: courseCode,
@@ -409,6 +447,8 @@ export function parseTkbExcel(
         instructor_name: instructor === "*" ? "" : instructor,
         program,
         department,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
         note,
       };
 
