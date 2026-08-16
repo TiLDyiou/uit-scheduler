@@ -21,11 +21,11 @@ import {
   User,
   Sun,
   Moon,
-  Layers,
   X,
   Sparkles,
 } from "lucide-react";
 import { getPeriodTime } from "@/lib/period-times";
+import DkhpScriptExport from "./DkhpScriptExport";
 
 interface Props {
   solutions: ScheduleSolution[];
@@ -830,88 +830,11 @@ export default function Step3Results({
         </div>
       </div>
 
-      {/* Enrolled Sections Summary Table (Double-Bezel) */}
-      <div className="p-1.5 rounded-[1.75rem] bg-[var(--bg-storm)] border border-[var(--border-muted)] shadow-md shadow-black/5">
-        <div className="rounded-[1.4rem] bg-[var(--bg-panel)] border border-[var(--border-muted)]/60 overflow-hidden">
-          <div className="p-4 border-b border-[var(--border-muted)] bg-[var(--bg-storm)]/40 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-[var(--color-blue)]" />
-              <h4 className="text-sm font-bold text-[var(--fg-editor)]">
-                Chi tiết các lớp đã xếp ({activeSolution.sections.length} lớp)
-              </h4>
-            </div>
-            <span className="text-xs font-bold text-[var(--fg-markdown)]">
-              Tổng cộng {activeStats.total_credits} tín chỉ
-            </span>
-          </div>
-
-          <div className="overflow-x-auto custom-scrollbar">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-[var(--border-muted)] bg-[var(--bg-storm)]/60 text-[var(--fg-comments)] font-bold">
-                  <th className="p-3 w-12 text-center whitespace-nowrap">STT</th>
-                  <th className="p-3 whitespace-nowrap">Mã lớp</th>
-                  <th className="p-3">Tên môn học</th>
-                  <th className="p-3 whitespace-nowrap">Hình thức</th>
-                  <th className="p-3 whitespace-nowrap">Thứ</th>
-                  <th className="p-3 whitespace-nowrap">Tiết</th>
-                  <th className="p-3 whitespace-nowrap">Phòng</th>
-                  <th className="p-3 whitespace-nowrap">Giảng viên</th>
-                  <th className="p-3 text-center whitespace-nowrap">Ngày BĐ</th>
-                  <th className="p-3 text-center whitespace-nowrap">Ngày KT</th>
-                  <th className="p-3 text-center whitespace-nowrap">TC</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border-muted)]/40 text-[var(--fg-markdown)]">
-                {activeSolution.sections.map((s, idx) => (
-                  <tr
-                    key={s.section_code}
-                    className="hover:bg-[var(--bg-storm)]/50 transition-colors"
-                  >
-                    <td className="p-3 text-center font-mono text-[var(--fg-comments)] whitespace-nowrap">
-                      {idx + 1}
-                    </td>
-                    <td className="p-3 font-mono font-bold text-[var(--color-blue)] whitespace-nowrap">
-                      {s.section_code}
-                    </td>
-                    <td className="p-3 font-bold text-[var(--fg-editor)] min-w-[160px]">
-                      {s.course_name}
-                    </td>
-                    <td className="p-3 whitespace-nowrap">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap ${
-                          s.is_lab
-                            ? "bg-[var(--color-orange)]/15 text-[var(--color-orange)]"
-                            : "bg-[var(--color-blue)]/15 text-[var(--color-blue)]"
-                        }`}
-                      >
-                        {s.is_lab ? "Thực hành" : "Lý thuyết"}
-                      </span>
-                    </td>
-                    <td className="p-3 font-bold whitespace-nowrap">
-                      {s.day_of_week === 8
-                        ? "Chủ nhật"
-                        : `Thứ ${s.day_of_week}`}
-                    </td>
-                    <td className="p-3 font-mono whitespace-nowrap">{s.periods.join(", ")}</td>
-                    <td className="p-3 font-medium whitespace-nowrap">{s.room || "-"}</td>
-                    <td className="p-3 whitespace-nowrap">{s.instructor_name || "-"}</td>
-                    <td className="p-3 text-center font-mono text-[11px] whitespace-nowrap text-[var(--fg-comments)]">
-                      {s.startDate || "-"}
-                    </td>
-                    <td className="p-3 text-center font-mono text-[11px] whitespace-nowrap text-[var(--fg-comments)]">
-                      {s.endDate || "-"}
-                    </td>
-                    <td className="p-3 text-center font-extrabold whitespace-nowrap">
-                      {s.credits}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      {/* Bulk Registration Script & Class Codes Export (Double-Bezel) */}
+      <DkhpScriptExport
+        sections={activeSolution.sections}
+        totalCredits={activeStats.total_credits}
+      />
 
       {/* Back Button Action */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
