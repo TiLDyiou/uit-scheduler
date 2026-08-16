@@ -84,6 +84,12 @@ npm start
 
 ---
 
+## Tri Ân
+
+- Tính năng xuất mã Script ĐKHP được lấy cảm hứng từ dự án [**Dang-Ky-Hoc-Phan-UIT**](https://github.com/loia5tqd001/Dang-Ky-Hoc-Phan-UIT) của [**@loia5tqd001**](https://github.com/loia5tqd001). Xin cảm ơn tác giả đã đóng góp công cụ hữu ích cho cộng đồng sinh viên UIT!
+
+---
+
 ## Bản Quyền & Giấy Phép
 
 Phát triển bởi sinh viên vì cộng đồng sinh viên UIT.
