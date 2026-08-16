@@ -721,8 +721,8 @@ export default function Step3Results({
                                               <Calendar
                                                 className={`w-2.5 h-2.5 shrink-0 ${
                                                   isLight
-                                                    ? "text-[#1e66f5]"
-                                                    : "text-[#7aa2f7]"
+                                                    ? "text-[#6c6f85]"
+                                                    : "text-[#7a889b]"
                                                 }`}
                                               />
                                               <span>{startParts.day}/</span>
@@ -738,8 +738,8 @@ export default function Step3Results({
                                                 <ArrowDown
                                                   className={`w-2.5 h-2.5 my-0.5 shrink-0 ${
                                                     isLight
-                                                      ? "text-[#1e66f5]"
-                                                      : "text-[#7aa2f7]"
+                                                      ? "text-[#6c6f85]"
+                                                      : "text-[#7a889b]"
                                                   }`}
                                                 />
                                               </div>
@@ -769,8 +769,8 @@ export default function Step3Results({
                                               <Calendar
                                                 className={`w-2.5 h-2.5 shrink-0 ${
                                                   isLight
-                                                    ? "text-[#1e66f5]"
-                                                    : "text-[#7aa2f7]"
+                                                    ? "text-[#6c6f85]"
+                                                    : "text-[#7a889b]"
                                                 }`}
                                               />
                                               <span>{s.startDate || "?"}</span>
@@ -779,8 +779,8 @@ export default function Step3Results({
                                               <ArrowDown
                                                 className={`w-2.5 h-2.5 my-0.5 shrink-0 ${
                                                   isLight
-                                                    ? "text-[#1e66f5]"
-                                                    : "text-[#7aa2f7]"
+                                                    ? "text-[#6c6f85]"
+                                                    : "text-[#7a889b]"
                                                 }`}
                                               />
                                             </div>
