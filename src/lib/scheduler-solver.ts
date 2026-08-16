@@ -263,28 +263,50 @@ export function solveSchedule({
 
     // 5. Apply pinned/selected specific sections if any
     let finalOptions = options;
-    const pinnedCourse = pinned_sections?.[cc];
+    const baseCC = getBaseCourseCode(cc);
+    const pinnedCourse =
+      pinned_sections?.[cc] ||
+      pinned_sections?.[baseCC] ||
+      Object.entries(pinned_sections || {}).find(([k]) => {
+        const baseK = getBaseCourseCode(k);
+        return (
+          baseK === baseCC ||
+          k === cc ||
+          k.startsWith(baseCC) ||
+          cc.startsWith(baseK)
+        );
+      })?.[1] ||
+      Object.values(pinned_sections || {}).find(
+        (p) =>
+          (p.theorySectionCode &&
+            sects.some((s) => s.section_code === p.theorySectionCode)) ||
+          (p.labSectionCode &&
+            sects.some((s) => s.section_code === p.labSectionCode))
+      );
 
-    if (pinnedCourse && (pinnedCourse.theorySectionCode || pinnedCourse.labSectionCode)) {
-      if (pinnedCourse.theorySectionCode) {
-        finalOptions = finalOptions.filter((opt) =>
-          opt.sections.some(
-            (s) => s.section_code === pinnedCourse.theorySectionCode
-          )
-        );
-      }
-      if (pinnedCourse.labSectionCode) {
-        finalOptions = finalOptions.filter((opt) =>
-          opt.sections.some(
-            (s) => s.section_code === pinnedCourse.labSectionCode
-          )
-        );
-      }
+    if (
+      pinnedCourse &&
+      (pinnedCourse.theorySectionCode || pinnedCourse.labSectionCode)
+    ) {
+      const targetCodes = [
+        pinnedCourse.theorySectionCode,
+        pinnedCourse.labSectionCode,
+      ].filter(Boolean) as string[];
+
+      finalOptions = finalOptions.filter((opt) =>
+        targetCodes.every((tCode) =>
+          opt.sections.some((s) => s.section_code === tCode)
+        )
+      );
 
       if (finalOptions.length === 0) {
         const pinnedDesc = [
-          pinnedCourse.theorySectionCode ? `LT: ${pinnedCourse.theorySectionCode}` : "",
-          pinnedCourse.labSectionCode ? `TH: ${pinnedCourse.labSectionCode}` : "",
+          pinnedCourse.theorySectionCode
+            ? `LT: ${pinnedCourse.theorySectionCode}`
+            : "",
+          pinnedCourse.labSectionCode
+            ? `TH: ${pinnedCourse.labSectionCode}`
+            : "",
         ]
           .filter(Boolean)
           .join(", ");

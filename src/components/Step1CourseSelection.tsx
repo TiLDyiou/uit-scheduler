@@ -231,13 +231,14 @@ export default function Step1CourseSelection({
     courseCode: string,
     sectionCode: string,
   ) => {
+    const baseCC = getBaseCourseCode(courseCode);
     // Automatically ensure course is selected
-    if (!selectedCourseCodes.includes(courseCode)) {
-      setSelectedCourseCodes([...selectedCourseCodes, courseCode]);
+    if (!selectedCourseCodes.includes(baseCC) && !selectedCourseCodes.includes(courseCode)) {
+      setSelectedCourseCodes([...selectedCourseCodes, baseCC]);
     }
 
     setPinnedSections((prev) => {
-      const current = prev[courseCode] || {};
+      const current = prev[baseCC] || prev[courseCode] || {};
       const isAlreadySelected = current.theorySectionCode === sectionCode;
       const nextTheory = isAlreadySelected ? undefined : sectionCode;
 
@@ -247,15 +248,17 @@ export default function Step1CourseSelection({
         nextLab = undefined; // reset mismatched lab
       }
 
+      const copy = { ...prev };
+      delete copy[courseCode];
+      delete copy[baseCC];
+
       if (!nextTheory && !nextLab) {
-        const copy = { ...prev };
-        delete copy[courseCode];
         return copy;
       }
 
       return {
-        ...prev,
-        [courseCode]: {
+        ...copy,
+        [baseCC]: {
           theorySectionCode: nextTheory,
           labSectionCode: nextLab,
         },
@@ -267,30 +270,33 @@ export default function Step1CourseSelection({
     courseCode: string,
     labSectionCode: string,
   ) => {
+    const baseCC = getBaseCourseCode(courseCode);
     // Automatically ensure course is selected
-    if (!selectedCourseCodes.includes(courseCode)) {
-      setSelectedCourseCodes([...selectedCourseCodes, courseCode]);
+    if (!selectedCourseCodes.includes(baseCC) && !selectedCourseCodes.includes(courseCode)) {
+      setSelectedCourseCodes([...selectedCourseCodes, baseCC]);
     }
 
     const parentTheoryCode = getBaseSectionCode(labSectionCode);
 
     setPinnedSections((prev) => {
-      const current = prev[courseCode] || {};
+      const current = prev[baseCC] || prev[courseCode] || {};
       const isAlreadySelected = current.labSectionCode === labSectionCode;
       const nextLab = isAlreadySelected ? undefined : labSectionCode;
 
       // When selecting a lab, automatically link and select the corresponding theory class!
       const nextTheory = nextLab ? parentTheoryCode : current.theorySectionCode;
 
+      const copy = { ...prev };
+      delete copy[courseCode];
+      delete copy[baseCC];
+
       if (!nextTheory && !nextLab) {
-        const copy = { ...prev };
-        delete copy[courseCode];
         return copy;
       }
 
       return {
-        ...prev,
-        [courseCode]: {
+        ...copy,
+        [baseCC]: {
           theorySectionCode: nextTheory,
           labSectionCode: nextLab,
         },
@@ -299,9 +305,11 @@ export default function Step1CourseSelection({
   };
 
   const handleResetCoursePin = (courseCode: string) => {
+    const baseCC = getBaseCourseCode(courseCode);
     setPinnedSections((prev) => {
       const copy = { ...prev };
       delete copy[courseCode];
+      delete copy[baseCC];
       return copy;
     });
   };
