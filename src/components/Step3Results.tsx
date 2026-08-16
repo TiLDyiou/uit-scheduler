@@ -643,8 +643,8 @@ export default function Step3Results({
                                           <span
                                             className={`text-[9px] font-bold ${
                                               isLight
-                                                ? "text-[#1e66f5]"
-                                                : "text-[#7aa2f7]"
+                                                ? palette.titleLight
+                                                : palette.titleDark
                                             }`}
                                           >
                                             Cách tuần
