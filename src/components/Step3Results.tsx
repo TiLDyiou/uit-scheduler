@@ -8,6 +8,7 @@ import {
   getBaseCourseCode,
   getBaseSectionCode,
   doSectionsOverlap,
+  calculateSolutionStats,
 } from "@/lib/scheduler-solver";
 import confetti from "canvas-confetti";
 import {
@@ -96,6 +97,20 @@ export default function Step3Results({
 
   const activeSolution = currentSolutions[selectedIndex] || solutions[0];
 
+  const activeStats = useMemo(() => {
+    if (!activeSolution) {
+      return {
+        study_days_count: 0,
+        free_days: [],
+        morning_classes_count: 0,
+        afternoon_classes_count: 0,
+        total_credits: 0,
+        score: 0,
+      };
+    }
+    return calculateSolutionStats(activeSolution.sections);
+  }, [activeSolution]);
+
   const colorIndexMap = useMemo(() => {
     const map: Record<string, number> = {};
     if (!activeSolution) return map;
@@ -169,10 +184,17 @@ export default function Step3Results({
       ...replacementSections,
     ];
 
+    const updatedStats = calculateSolutionStats(updatedSections);
     const updatedSolutions = [...currentSolutions];
     updatedSolutions[selectedIndex] = {
       ...activeSolution,
       sections: updatedSections,
+      study_days_count: updatedStats.study_days_count,
+      free_days: updatedStats.free_days,
+      total_credits: updatedStats.total_credits,
+      morning_classes_count: updatedStats.morning_classes_count,
+      afternoon_classes_count: updatedStats.afternoon_classes_count,
+      score: updatedStats.score,
     };
     setCurrentSolutions(updatedSolutions);
     setSwapTargetSection(null);
@@ -389,6 +411,7 @@ export default function Step3Results({
               Phương án:
             </span>
             {currentSolutions.map((sol, idx) => {
+              const stats = calculateSolutionStats(sol.sections);
               const isSelected = selectedIndex === idx;
               return (
                 <button
@@ -402,7 +425,7 @@ export default function Step3Results({
                 >
                   <span>#{idx + 1}</span>
                   <span className="text-[10px] font-medium opacity-80">
-                    ({sol.study_days_count} ngày)
+                    ({stats.study_days_count} ngày)
                   </span>
                 </button>
               );
@@ -489,7 +512,7 @@ export default function Step3Results({
                               : "bg-[#7aa2f7]/15 text-[#7aa2f7] border-[#7aa2f7]/30"
                           }`}
                         >
-                          {activeSolution.total_credits} Tín chỉ
+                          {activeStats.total_credits} Tín chỉ
                         </span>
                       </h3>
                       <p
@@ -497,9 +520,9 @@ export default function Step3Results({
                           isLight ? "text-[#6c6f85]" : "text-[#a9b1d6]"
                         }`}
                       >
-                        Học {activeSolution.study_days_count} ngày/tuần
-                        {activeSolution.free_days.length > 0 &&
-                          ` • Nghỉ các ngày: ${activeSolution.free_days
+                        Học {activeStats.study_days_count} ngày/tuần
+                        {activeStats.free_days.length > 0 &&
+                          ` • Nghỉ các ngày: ${activeStats.free_days
                             .map((d) => (d === 8 ? "Chủ nhật" : `Thứ ${d}`))
                             .join(", ")}`}
                       </p>
@@ -818,7 +841,7 @@ export default function Step3Results({
               </h4>
             </div>
             <span className="text-xs font-bold text-[var(--fg-markdown)]">
-              Tổng cộng {activeSolution.total_credits} tín chỉ
+              Tổng cộng {activeStats.total_credits} tín chỉ
             </span>
           </div>
 

@@ -43,9 +43,9 @@ export function doSectionsOverlap(a: Section, b: Section): boolean {
 }
 
 /**
- * Calculate quality score for a solution to rank best options first
+ * Calculate quality score and metrics for a solution to rank best options first
  */
-function scoreSolution(sections: Section[]): {
+export function calculateSolutionStats(sections: Section[]): {
   study_days_count: number;
   free_days: number[];
   morning_classes_count: number;
@@ -56,23 +56,29 @@ function scoreSolution(sections: Section[]): {
   const daysUsed = new Set<number>();
   let morningCount = 0;
   let afternoonCount = 0;
-  let totalCredits = 0;
 
   // Track periods by day to calculate gaps
   const dayPeriods: Record<number, number[]> = {};
 
   for (const s of sections) {
-    daysUsed.add(s.day_of_week);
-    totalCredits += s.credits;
+    if (
+      typeof s.day_of_week === "number" &&
+      s.day_of_week >= 2 &&
+      s.day_of_week <= 8 &&
+      Array.isArray(s.periods) &&
+      s.periods.length > 0
+    ) {
+      daysUsed.add(s.day_of_week);
 
-    if (!dayPeriods[s.day_of_week]) {
-      dayPeriods[s.day_of_week] = [];
-    }
-    dayPeriods[s.day_of_week].push(...s.periods);
+      if (!dayPeriods[s.day_of_week]) {
+        dayPeriods[s.day_of_week] = [];
+      }
+      dayPeriods[s.day_of_week].push(...s.periods);
 
-    for (const p of s.periods) {
-      if (p <= 5) morningCount++;
-      else afternoonCount++;
+      for (const p of s.periods) {
+        if (p <= 5) morningCount++;
+        else afternoonCount++;
+      }
     }
   }
 
@@ -82,6 +88,16 @@ function scoreSolution(sections: Section[]): {
       freeDays.push(d);
     }
   }
+
+  // Calculate unique course credits (avoid double counting when theory and lab each have full credits)
+  const courseCredits: Record<string, number> = {};
+  for (const s of sections) {
+    const baseCode = getBaseCourseCode(s.course_code);
+    if (!courseCredits[baseCode] || s.credits > courseCredits[baseCode]) {
+      courseCredits[baseCode] = s.credits;
+    }
+  }
+  const totalCredits = Object.values(courseCredits).reduce((a, b) => a + b, 0);
 
   // Calculate gaps between periods on the same day
   let totalGaps = 0;
@@ -112,6 +128,8 @@ function scoreSolution(sections: Section[]): {
     score,
   };
 }
+
+const scoreSolution = calculateSolutionStats;
 
 /**
  * Pure client-side CSP Solver with Theory-Lab pairing, busy slot avoidance,
