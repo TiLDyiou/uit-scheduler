@@ -826,17 +826,17 @@ export default function Step3Results({
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-[var(--border-muted)] bg-[var(--bg-storm)]/60 text-[var(--fg-comments)] font-bold">
-                  <th className="p-3 w-12 text-center">STT</th>
-                  <th className="p-3">Mã lớp</th>
+                  <th className="p-3 w-12 text-center whitespace-nowrap">STT</th>
+                  <th className="p-3 whitespace-nowrap">Mã lớp</th>
                   <th className="p-3">Tên môn học</th>
-                  <th className="p-3">Hình thức</th>
-                  <th className="p-3">Thứ</th>
-                  <th className="p-3">Tiết</th>
-                  <th className="p-3">Phòng</th>
-                  <th className="p-3">Giảng viên</th>
-                  <th className="p-3 text-center">Ngày BĐ</th>
-                  <th className="p-3 text-center">Ngày KT</th>
-                  <th className="p-3 text-center">TC</th>
+                  <th className="p-3 whitespace-nowrap">Hình thức</th>
+                  <th className="p-3 whitespace-nowrap">Thứ</th>
+                  <th className="p-3 whitespace-nowrap">Tiết</th>
+                  <th className="p-3 whitespace-nowrap">Phòng</th>
+                  <th className="p-3 whitespace-nowrap">Giảng viên</th>
+                  <th className="p-3 text-center whitespace-nowrap">Ngày BĐ</th>
+                  <th className="p-3 text-center whitespace-nowrap">Ngày KT</th>
+                  <th className="p-3 text-center whitespace-nowrap">TC</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-muted)]/40 text-[var(--fg-markdown)]">
@@ -845,18 +845,18 @@ export default function Step3Results({
                     key={s.section_code}
                     className="hover:bg-[var(--bg-storm)]/50 transition-colors"
                   >
-                    <td className="p-3 text-center font-mono text-[var(--fg-comments)]">
+                    <td className="p-3 text-center font-mono text-[var(--fg-comments)] whitespace-nowrap">
                       {idx + 1}
                     </td>
-                    <td className="p-3 font-mono font-bold text-[var(--color-blue)]">
+                    <td className="p-3 font-mono font-bold text-[var(--color-blue)] whitespace-nowrap">
                       {s.section_code}
                     </td>
-                    <td className="p-3 font-bold text-[var(--fg-editor)]">
+                    <td className="p-3 font-bold text-[var(--fg-editor)] min-w-[160px]">
                       {s.course_name}
                     </td>
-                    <td className="p-3">
+                    <td className="p-3 whitespace-nowrap">
                       <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap ${
                           s.is_lab
                             ? "bg-[var(--color-orange)]/15 text-[var(--color-orange)]"
                             : "bg-[var(--color-blue)]/15 text-[var(--color-blue)]"
@@ -865,21 +865,21 @@ export default function Step3Results({
                         {s.is_lab ? "Thực hành" : "Lý thuyết"}
                       </span>
                     </td>
-                    <td className="p-3 font-bold">
+                    <td className="p-3 font-bold whitespace-nowrap">
                       {s.day_of_week === 8
                         ? "Chủ nhật"
                         : `Thứ ${s.day_of_week}`}
                     </td>
-                    <td className="p-3 font-mono">{s.periods.join(", ")}</td>
-                    <td className="p-3 font-medium">{s.room || "-"}</td>
-                    <td className="p-3">{s.instructor_name || "-"}</td>
+                    <td className="p-3 font-mono whitespace-nowrap">{s.periods.join(", ")}</td>
+                    <td className="p-3 font-medium whitespace-nowrap">{s.room || "-"}</td>
+                    <td className="p-3 whitespace-nowrap">{s.instructor_name || "-"}</td>
                     <td className="p-3 text-center font-mono text-[11px] whitespace-nowrap text-[var(--fg-comments)]">
                       {s.startDate || "-"}
                     </td>
                     <td className="p-3 text-center font-mono text-[11px] whitespace-nowrap text-[var(--fg-comments)]">
                       {s.endDate || "-"}
                     </td>
-                    <td className="p-3 text-center font-extrabold">
+                    <td className="p-3 text-center font-extrabold whitespace-nowrap">
                       {s.credits}
                     </td>
                   </tr>
