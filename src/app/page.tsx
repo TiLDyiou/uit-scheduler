@@ -204,6 +204,7 @@ export default function SchedulerPage() {
             }
           }}
           selectedCount={selectedCourseCodes.length}
+          canGoToResults={Boolean(availableSlots || solutions.length > 0)}
         />
 
         {/* Step Content */}
@@ -213,6 +214,8 @@ export default function SchedulerPage() {
               sections={sections}
               setSections={setSections}
               onNext={handleNextToPreference}
+              onQuickSolve={() => handleSolve(availableSlots, true)}
+              canQuickSolve={Boolean(availableSlots || solutions.length > 0)}
               selectedCourseCodes={selectedCourseCodes}
               setSelectedCourseCodes={setSelectedCourseCodes}
               pinnedSections={pinnedSections}
@@ -235,8 +238,10 @@ export default function SchedulerPage() {
             <Step3Results
               solutions={solutions}
               allSections={sections}
+              availableSlots={availableSlots}
               warnings={warnings}
               onBack={() => setStep("preference")}
+              onBackToSelection={() => setStep("selection")}
             />
           )}
         </div>

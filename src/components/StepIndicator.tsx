@@ -7,12 +7,14 @@ interface StepIndicatorProps {
   currentStep: StepType;
   onStepChange?: (step: StepType) => void;
   selectedCount: number;
+  canGoToResults?: boolean;
 }
 
 export default function StepIndicator({
   currentStep,
   onStepChange,
   selectedCount,
+  canGoToResults = false,
 }: StepIndicatorProps) {
   const steps: {
     key: StepType;
@@ -33,7 +35,11 @@ export default function StepIndicator({
         {steps.map((s, idx) => {
           const isPast = idx < currentIndex;
           const isCurrent = idx === currentIndex;
-          const isClickable = !isCurrent && (isPast || (idx === 1 && selectedCount > 0));
+          const isClickable =
+            !isCurrent &&
+            (isPast ||
+              (idx === 1 && selectedCount > 0) ||
+              (idx === 2 && selectedCount > 0 && canGoToResults));
           const Icon = s.icon;
 
           return (
