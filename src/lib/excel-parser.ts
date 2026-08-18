@@ -157,21 +157,28 @@ interface ColumnMapping {
  */
 function detectColumnMapping(headers: unknown[]): ColumnMapping | null {
   const colMap: ColumnMapping = {};
-  const normHeaders = headers.map(normalizeStr);
+  // Normalize header text by stripping accents, lowercase, and removing all non-alphanumeric chars
+  const normHeaders = headers.map((h) =>
+    normalizeStr(h).replace(/[^a-z0-9]/g, ""),
+  );
 
   const hasCourseCode = normHeaders.some(
     (c) =>
-      c === "ma mh" ||
-      c === "ma mon" ||
-      c.includes("ma mh") ||
-      c.includes("ma mon hoc"),
+      c === "mamh" ||
+      c === "mamon" ||
+      c === "mamonhoc" ||
+      c.startsWith("mamh") ||
+      c.startsWith("mamon") ||
+      c.includes("monhoc"),
   );
   const hasSectionCode = normHeaders.some(
     (c) =>
-      c === "ma lop" ||
-      c === "ma nhom" ||
-      c.includes("ma lop") ||
-      c.includes("ma nhom lop"),
+      (c === "malop" ||
+        c === "manhom" ||
+        c === "manhomlop" ||
+        c.startsWith("malop") ||
+        c.startsWith("manhom")) &&
+      !c.includes("lt"),
   );
 
   if (!hasCourseCode && !hasSectionCode) {
@@ -180,85 +187,115 @@ function detectColumnMapping(headers: unknown[]): ColumnMapping | null {
 
   normHeaders.forEach((c, idx) => {
     if (
-      c === "ma mh" ||
-      c === "ma mon" ||
-      c.includes("ma mh") ||
-      c.includes("ma mon hoc")
+      c === "mamh" ||
+      c === "mamon" ||
+      c === "mamonhoc" ||
+      c.startsWith("mamh") ||
+      c.startsWith("mamon")
     ) {
       colMap.courseCode = idx;
     } else if (
-      c === "ma lop" ||
-      c === "ma nhom" ||
-      c.includes("ma lop") ||
-      c.includes("ma nhom lop")
+      (c === "malop" ||
+        c === "manhom" ||
+        c === "manhomlop" ||
+        c.startsWith("malop") ||
+        c.startsWith("manhom")) &&
+      !c.includes("lt")
     ) {
       colMap.sectionCode = idx;
     } else if (
-      c === "ten mon hoc" ||
-      c === "ten mh" ||
-      c.includes("ten mon") ||
-      c.includes("ten mh")
+      c === "tenmh" ||
+      c === "tenmon" ||
+      c === "tenmonhoc" ||
+      c.startsWith("tenmh") ||
+      c.startsWith("tenmon")
     ) {
       colMap.courseName = idx;
     } else if (
-      c.includes("giang vien") ||
-      c.includes("tro giang") ||
-      c.includes("gv") ||
-      c === "ten gv"
+      c === "tengv" ||
+      c === "tengiangvien" ||
+      c.includes("tengv") ||
+      c.includes("tengiangvien") ||
+      c.includes("trogiang") ||
+      ((c.includes("giangvien") || c.includes("gv")) && !c.includes("ma"))
     ) {
       colMap.instructor = idx;
-    } else if (c.includes("si so") || c.includes("sl sv")) {
+    } else if (
+      c === "siso" ||
+      c === "slsv" ||
+      c.includes("siso") ||
+      c.includes("slsv")
+    ) {
       colMap.capacity = idx;
     } else if (
-      c.includes("so tc") ||
-      c.includes("to tc") ||
-      c.includes("tin chi") ||
-      c === "stc"
+      c === "sotc" ||
+      c === "stc" ||
+      c === "tinchi" ||
+      c.includes("sotc") ||
+      c.includes("totc") ||
+      c.includes("tinchi")
     ) {
       colMap.credits = idx;
-    } else if (c.includes("thuc hanh") || c.includes("lab")) {
+    } else if (
+      c === "thuchanh" ||
+      c === "lab" ||
+      c.includes("thuchanh") ||
+      c.includes("lab")
+    ) {
       colMap.isLab = idx;
     } else if (
+      c === "htgd" ||
       c.includes("htgd") ||
-      c.includes("hinh thuc") ||
-      c.includes("hinh thuc giang day")
+      c.includes("hinhthuc")
     ) {
       colMap.teachingType = idx;
-    } else if (c === "thu" || c.includes("thu")) {
+    } else if (
+      c === "thu" ||
+      (c.includes("thu") && !c.includes("thuchanh") && !c.includes("hinhthuc"))
+    ) {
       colMap.dayOfWeek = idx;
     } else if (c === "tiet" || c.includes("tiet")) {
       colMap.periods = idx;
-    } else if (c.includes("cach tuan")) {
+    } else if (c === "cachtuan" || c.includes("cachtuan")) {
       colMap.biweekly = idx;
-    } else if (c.includes("phong") || c === "phong hoc") {
+    } else if (c === "phong" || c === "phonghoc" || c.includes("phong")) {
       colMap.room = idx;
-    } else if (c.includes("khoa hoc") || c === "khoa") {
+    } else if (
+      (c === "khoahoc" || c === "khoa" || c.includes("khoahoc")) &&
+      !c.includes("dkhp") &&
+      !c.includes("khoaql") &&
+      !c.includes("quanly")
+    ) {
       colMap.cohort = idx;
     } else if (
-      c.includes("khoa ql") ||
-      c.includes("khoa quan ly") ||
-      c === "khoa"
+      c === "khoaql" ||
+      c.includes("khoaql") ||
+      c.includes("khoaquanly")
     ) {
       colMap.department = idx;
     } else if (
-      c.includes("he dt") ||
-      c.includes("chuong trinh") ||
-      c.includes("he dao tao")
+      (c === "hedt" ||
+        c.includes("hedt") ||
+        c.includes("chuongtrinh") ||
+        c.includes("hedaotao")) &&
+      !c.includes("dkhp")
     ) {
       colMap.program = idx;
     } else if (
+      c === "nbd" ||
       c.includes("nbd") ||
-      c.includes("bat dau") ||
-      c.includes("ngay bd")
+      c.includes("batdau") ||
+      c.includes("ngaybd")
     ) {
       colMap.startDate = idx;
     } else if (
+      c === "nkt" ||
       c.includes("nkt") ||
-      c.includes("ket thuc") ||
-      c.includes("ngay kt")
+      c.includes("ketthuc") ||
+      c.includes("ngaykt")
     ) {
       colMap.endDate = idx;
-    } else if (c.includes("ghi chu") || c.includes("ghichu")) {
+    } else if (c === "ghichu" || c.includes("ghichu")) {
       colMap.note = idx;
     }
   });
@@ -376,17 +413,24 @@ export function parseTkbExcel(
       // UIT rule for determining whether a row is a Lab (TH) or Theory (LT) section:
       // 1. If in a sheet explicitly named TH / Thực hành -> is_lab = true
       // 2. If in a sheet explicitly named LT / Lý thuyết -> is_lab = false
-      // 3. Otherwise (1-sheet file):
+      // 3. If column THỰC HÀNH is explicitly present -> 1 is lab, 0 is theory
+      // 4. Otherwise:
       //    - If HTGD is "LT" -> is_lab = false
       //    - If HTGD is "HT1", "HT2", "TG", "TH" -> is_lab = true
       //    - If section code ends with .1, .2, .3, .TTNT.1 -> is_lab = true
       const sLower = sheetName.toLowerCase();
       const ttUpper = teachingType.toUpperCase();
+      const isLabColVal =
+        colMap.isLab !== undefined ? String(row[colMap.isLab] || "").trim() : "";
       let isLab = false;
 
-      if (sLower.includes("th") || sLower.includes("thuc hanh")) {
+      if (/\bth\b|thuc\s*hanh/i.test(sLower)) {
         isLab = true;
-      } else if (sLower.includes("lt") || sLower.includes("ly thuyet")) {
+      } else if (/\blt\b|ly\s*thuyet/i.test(sLower)) {
+        isLab = false;
+      } else if (isLabColVal === "1") {
+        isLab = true;
+      } else if (isLabColVal === "0") {
         isLab = false;
       } else if (ttUpper === "LT") {
         isLab = false;
