@@ -23,7 +23,6 @@ import {
   Layers,
   Building2,
   Trash2,
-  Eye,
   FileUp,
   Pin,
   Lock,
@@ -233,7 +232,10 @@ export default function Step1CourseSelection({
   ) => {
     const baseCC = getBaseCourseCode(courseCode);
     // Automatically ensure course is selected
-    if (!selectedCourseCodes.includes(baseCC) && !selectedCourseCodes.includes(courseCode)) {
+    if (
+      !selectedCourseCodes.includes(baseCC) &&
+      !selectedCourseCodes.includes(courseCode)
+    ) {
       setSelectedCourseCodes([...selectedCourseCodes, baseCC]);
     }
 
@@ -272,7 +274,10 @@ export default function Step1CourseSelection({
   ) => {
     const baseCC = getBaseCourseCode(courseCode);
     // Automatically ensure course is selected
-    if (!selectedCourseCodes.includes(baseCC) && !selectedCourseCodes.includes(courseCode)) {
+    if (
+      !selectedCourseCodes.includes(baseCC) &&
+      !selectedCourseCodes.includes(courseCode)
+    ) {
       setSelectedCourseCodes([...selectedCourseCodes, baseCC]);
     }
 
@@ -487,13 +492,6 @@ export default function Step1CourseSelection({
 
                               <div className="flex items-center gap-1 shrink-0">
                                 <button
-                                  onClick={() => setInspectCourse(c)}
-                                  className="p-1.5 text-[var(--fg-comments)] hover:text-[var(--color-blue)] rounded-lg hover:bg-[var(--bg-storm)] transition-colors"
-                                  title="Xem và chọn cụ thể mã lớp"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </button>
-                                <button
                                   onClick={() => toggleCourse(code)}
                                   className="p-1.5 text-[var(--fg-comments)] hover:text-[var(--color-red)] rounded-lg hover:bg-[var(--bg-storm)] transition-colors"
                                   title="Bỏ chọn môn này"
@@ -539,7 +537,7 @@ export default function Step1CourseSelection({
                                   onClick={() => setInspectCourse(c)}
                                   className="text-[10px] text-[var(--color-blue)] hover:underline font-bold"
                                 >
-                                  {isPinned ? "Đổi lớp" : "Chọn lớp cụ thể"}
+                                  {isPinned ? "Đổi lớp" : "Chọn lớp"}
                                 </button>
                               </div>
                             </div>
@@ -760,14 +758,14 @@ export default function Step1CourseSelection({
                                   e.stopPropagation();
                                   setInspectCourse(course);
                                 }}
-                                className={`p-1.5 rounded-lg transition-colors ${
+                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border ${
                                   isPinned
-                                    ? "bg-[var(--color-blue)]/20 text-[var(--color-blue)] hover:bg-[var(--color-blue)]/30"
-                                    : "text-[var(--fg-comments)] hover:text-[var(--fg-editor)] hover:bg-[var(--bg-storm)]"
+                                    ? "bg-[var(--color-blue)]/15 text-[var(--color-blue)] border-[var(--color-blue)]/30 hover:bg-[var(--color-blue)]/25"
+                                    : "text-[var(--fg-comments)] hover:text-[var(--fg-editor)] hover:bg-[var(--bg-storm)] border-[var(--border-muted)]/60"
                                 }`}
                                 title="Xem và chọn cụ thể mã lớp"
                               >
-                                <Eye className="w-4 h-4" />
+                                Chọn lớp
                               </button>
 
                               <div
@@ -794,453 +792,458 @@ export default function Step1CourseSelection({
         </div>
       )}
 
-{/* Class Section Inspection & Specific Selection Modal (Global Viewport Portal) */}
-{inspectCourse &&
-  mounted &&
-  (() => {
-    const pin = pinnedSections[inspectCourse.code] || {};
-    const hasPin = Boolean(pin.theorySectionCode || pin.labSectionCode);
+      {/* Class Section Inspection & Specific Selection Modal (Global Viewport Portal) */}
+      {inspectCourse &&
+        mounted &&
+        (() => {
+          const pin = pinnedSections[inspectCourse.code] || {};
+          const hasPin = Boolean(pin.theorySectionCode || pin.labSectionCode);
 
-    // Find all pinned sections belonging to other courses
-    const otherPinnedSections: Section[] = [];
-    for (const [courseCode, p] of Object.entries(pinnedSections)) {
-      if (courseCode === inspectCourse.code) continue;
-      if (p.theorySectionCode) {
-        const sec = sections.find(
-          (s) =>
-            !s.is_lab &&
-            s.section_code === p.theorySectionCode &&
-            getBaseCourseCode(s.course_code) === courseCode,
-        );
-        if (sec) otherPinnedSections.push(sec);
-      }
-      if (p.labSectionCode) {
-        const sec = sections.find(
-          (s) =>
-            s.is_lab &&
-            s.section_code === p.labSectionCode &&
-            getBaseCourseCode(s.course_code) === courseCode,
-        );
-        if (sec) otherPinnedSections.push(sec);
-      }
-    }
+          // Find all pinned sections belonging to other courses
+          const otherPinnedSections: Section[] = [];
+          for (const [courseCode, p] of Object.entries(pinnedSections)) {
+            if (courseCode === inspectCourse.code) continue;
+            if (p.theorySectionCode) {
+              const sec = sections.find(
+                (s) =>
+                  !s.is_lab &&
+                  s.section_code === p.theorySectionCode &&
+                  getBaseCourseCode(s.course_code) === courseCode,
+              );
+              if (sec) otherPinnedSections.push(sec);
+            }
+            if (p.labSectionCode) {
+              const sec = sections.find(
+                (s) =>
+                  s.is_lab &&
+                  s.section_code === p.labSectionCode &&
+                  getBaseCourseCode(s.course_code) === courseCode,
+              );
+              if (sec) otherPinnedSections.push(sec);
+            }
+          }
 
-    const getDirectPinnedConflict = (s: Section) => {
-      const colliding = otherPinnedSections.filter((other) =>
-        doSectionsOverlap(s, other),
-      );
-      if (colliding.length === 0) return null;
-      return colliding
-        .map(
-          (c) =>
-            `${c.section_code} (Thứ ${c.day_of_week === 8 ? "CN" : c.day_of_week}, Tiết ${c.periods.join(",")})`,
-        )
-        .join("; ");
-    };
+          const getDirectPinnedConflict = (s: Section) => {
+            const colliding = otherPinnedSections.filter((other) =>
+              doSectionsOverlap(s, other),
+            );
+            if (colliding.length === 0) return null;
+            return colliding
+              .map(
+                (c) =>
+                  `${c.section_code} (Thứ ${c.day_of_week === 8 ? "CN" : c.day_of_week}, Tiết ${c.periods.join(",")})`,
+              )
+              .join("; ");
+          };
 
-    // Filtered lab sections based on selected theory class
-    const visibleLabSections = inspectCourse.labSections.filter((lab) => {
-      if (!pin.theorySectionCode) return true;
-      return (
-        getBaseSectionCode(lab.section_code) === pin.theorySectionCode
-      );
-    });
+          // Filtered lab sections based on selected theory class
+          const visibleLabSections = inspectCourse.labSections.filter((lab) => {
+            if (!pin.theorySectionCode) return true;
+            return (
+              getBaseSectionCode(lab.section_code) === pin.theorySectionCode
+            );
+          });
 
-    // Process & sort theory sections (non-conflicting first)
-    const processedTheorySections = inspectCourse.theorySections
-      .map((s) => {
-        const directConflict = getDirectPinnedConflict(s);
-        const matchingLabs = inspectCourse.labSections.filter(
-          (lab) => getBaseSectionCode(lab.section_code) === s.section_code,
-        );
-        const hasValidLab =
-          matchingLabs.length === 0 ||
-          matchingLabs.some(
-            (lab) =>
-              !getDirectPinnedConflict(lab) && !doSectionsOverlap(s, lab),
-          );
+          // Process & sort theory sections (non-conflicting first)
+          const processedTheorySections = inspectCourse.theorySections
+            .map((s) => {
+              const directConflict = getDirectPinnedConflict(s);
+              const matchingLabs = inspectCourse.labSections.filter(
+                (lab) =>
+                  getBaseSectionCode(lab.section_code) === s.section_code,
+              );
+              const hasValidLab =
+                matchingLabs.length === 0 ||
+                matchingLabs.some(
+                  (lab) =>
+                    !getDirectPinnedConflict(lab) && !doSectionsOverlap(s, lab),
+                );
 
-        let conflictMsg: string | null = null;
-        if (directConflict) {
-          conflictMsg = `Trùng với lớp cố định: ${directConflict}`;
-        } else if (matchingLabs.length > 0 && !hasValidLab) {
-          conflictMsg =
-            "Tất cả lớp TH của lớp này đều trùng với lớp cố định khác";
-        }
+              let conflictMsg: string | null = null;
+              if (directConflict) {
+                conflictMsg = `Trùng với lớp cố định: ${directConflict}`;
+              } else if (matchingLabs.length > 0 && !hasValidLab) {
+                conflictMsg =
+                  "Tất cả lớp TH của lớp này đều trùng với lớp cố định khác";
+              }
 
-        return {
-          section: s,
-          hasConflict: Boolean(conflictMsg),
-          conflictMsg,
-        };
-      })
-      .sort((a, b) => {
-        if (a.hasConflict !== b.hasConflict)
-          return a.hasConflict ? 1 : -1;
-        if (a.section.day_of_week !== b.section.day_of_week) {
-          return a.section.day_of_week - b.section.day_of_week;
-        }
-        return (a.section.periods[0] || 0) - (b.section.periods[0] || 0);
-      });
+              return {
+                section: s,
+                hasConflict: Boolean(conflictMsg),
+                conflictMsg,
+              };
+            })
+            .sort((a, b) => {
+              if (a.hasConflict !== b.hasConflict)
+                return a.hasConflict ? 1 : -1;
+              if (a.section.day_of_week !== b.section.day_of_week) {
+                return a.section.day_of_week - b.section.day_of_week;
+              }
+              return (a.section.periods[0] || 0) - (b.section.periods[0] || 0);
+            });
 
-    // Process & sort lab sections (non-conflicting first)
-    const processedLabSections = visibleLabSections
-      .map((s) => {
-        const directConflict = getDirectPinnedConflict(s);
-        const parentTheoryCode = getBaseSectionCode(s.section_code);
-        const parentTheory = inspectCourse.theorySections.find(
-          (ts) => ts.section_code === parentTheoryCode,
-        );
-        const parentConflict = parentTheory
-          ? getDirectPinnedConflict(parentTheory)
-          : null;
+          // Process & sort lab sections (non-conflicting first)
+          const processedLabSections = visibleLabSections
+            .map((s) => {
+              const directConflict = getDirectPinnedConflict(s);
+              const parentTheoryCode = getBaseSectionCode(s.section_code);
+              const parentTheory = inspectCourse.theorySections.find(
+                (ts) => ts.section_code === parentTheoryCode,
+              );
+              const parentConflict = parentTheory
+                ? getDirectPinnedConflict(parentTheory)
+                : null;
 
-        let conflictMsg: string | null = null;
-        if (directConflict) {
-          conflictMsg = `Trùng với lớp cố định: ${directConflict}`;
-        } else if (parentConflict) {
-          conflictMsg = `Lớp LT (${parentTheoryCode}) trùng với: ${parentConflict}`;
-        }
+              let conflictMsg: string | null = null;
+              if (directConflict) {
+                conflictMsg = `Trùng với lớp cố định: ${directConflict}`;
+              } else if (parentConflict) {
+                conflictMsg = `Lớp LT (${parentTheoryCode}) trùng với: ${parentConflict}`;
+              }
 
-        return {
-          section: s,
-          hasConflict: Boolean(conflictMsg),
-          conflictMsg,
-        };
-      })
-      .sort((a, b) => {
-        if (a.hasConflict !== b.hasConflict)
-          return a.hasConflict ? 1 : -1;
-        if (a.section.day_of_week !== b.section.day_of_week) {
-          return a.section.day_of_week - b.section.day_of_week;
-        }
-        return (a.section.periods[0] || 0) - (b.section.periods[0] || 0);
-      });
+              return {
+                section: s,
+                hasConflict: Boolean(conflictMsg),
+                conflictMsg,
+              };
+            })
+            .sort((a, b) => {
+              if (a.hasConflict !== b.hasConflict)
+                return a.hasConflict ? 1 : -1;
+              if (a.section.day_of_week !== b.section.day_of_week) {
+                return a.section.day_of_week - b.section.day_of_week;
+              }
+              return (a.section.periods[0] || 0) - (b.section.periods[0] || 0);
+            });
 
-    return createPortal(
-      <div
-        onClick={() => setInspectCourse(null)}
-        className="fixed inset-0 z-[100] w-screen h-screen flex items-center justify-center p-4 sm:p-6 bg-black/65 dark:bg-black/80 transition-opacity duration-200"
-      >
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-3xl max-h-[88vh] my-auto rounded-[1.75rem] bg-[var(--bg-panel)] border border-[var(--border-terminal)] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
-        >
-          {/* Modal Header */}
-          <div className="p-5 sm:p-6 border-b border-[var(--border-muted)] flex items-start justify-between bg-[var(--bg-storm)]/60 gap-4">
-            <div className="space-y-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-blue)] shrink-0" />
-                <h3 className="text-base sm:text-lg font-bold text-[var(--fg-editor)] tracking-tight truncate">
-                  {inspectCourse.name}
-                </h3>
-              </div>
-              <p className="text-xs text-[var(--fg-comments)] flex flex-wrap items-center gap-2">
-                <span>
-                  Mã môn:{" "}
-                  <strong className="font-mono text-[var(--fg-editor)]">
-                    {inspectCourse.code}
-                  </strong>
-                </span>
-                <span>•</span>
-                <span>
-                  <strong>{inspectCourse.totalCredits}</strong> tín chỉ (
-                  {inspectCourse.baseCredits} LT +{" "}
-                  {inspectCourse.labCredits} TH)
-                </span>
-                {inspectCourse.departments.length > 0 && (
-                  <>
-                    <span>•</span>
-                    <span>
-                      Khoa: {inspectCourse.departments.join(", ")}
-                    </span>
-                  </>
-                )}
-              </p>
-            </div>
-
-            <button
+          return createPortal(
+            <div
               onClick={() => setInspectCourse(null)}
-              className="p-2 rounded-full text-[var(--fg-comments)] hover:text-[var(--fg-editor)] hover:bg-[var(--bg-storm)] transition-colors shrink-0"
-              title="Đóng (Esc)"
+              className="fixed inset-0 z-[100] w-screen h-screen flex items-center justify-center p-4 sm:p-6 bg-black/65 dark:bg-black/80 transition-opacity duration-200"
             >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Pin Banner / Instruction */}
-          <div className="px-5 py-3 bg-[var(--bg-storm)]/40 border-b border-[var(--border-muted)]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-2">
-              <Pin className="w-4 h-4 text-[var(--color-blue)] shrink-0" />
-              <span className="text-[var(--fg-editor)]">
-                {hasPin ? (
-                  <span>
-                    Đang cố định:{" "}
-                    <strong className="text-[var(--color-blue)] font-mono">
-                      {[pin.theorySectionCode, pin.labSectionCode]
-                        .filter(Boolean)
-                        .join(" + ")}
-                    </strong>
-                  </span>
-                ) : (
-                  <span className="text-[var(--fg-comments)]">
-                    Nhấp vào mã lớp bên dưới để{" "}
-                    <strong>chỉ định lớp học cụ thể</strong> (hệ thống sẽ
-                    tự liên kết lớp LT và TH tương ứng).
-                  </span>
-                )}
-              </span>
-            </div>
-
-            {hasPin && (
-              <button
-                type="button"
-                onClick={() => handleResetCoursePin(inspectCourse.code)}
-                className="px-3 py-1 rounded-lg bg-[var(--bg-storm)] hover:bg-[var(--border-muted)] text-[var(--fg-editor)] font-bold text-[11px] flex items-center gap-1 shrink-0 transition-colors"
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="relative w-full max-w-3xl max-h-[88vh] my-auto rounded-[1.75rem] bg-[var(--bg-panel)] border border-[var(--border-terminal)] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
               >
-                <RotateCcw className="w-3 h-3" /> Đặt lại Tự động
-              </button>
-            )}
-          </div>
-
-          {/* Modal Body */}
-          <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 custom-scrollbar">
-            {/* 1. Theory Sections */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--color-blue)] flex items-center gap-1.5">
-                  <Layers className="w-4 h-4" />
-                  1. Lớp Lý thuyết
-                </h4>
-                {pin.theorySectionCode && (
-                  <span className="text-[11px] font-bold text-[var(--color-blue)]">
-                    ✓ Đã chọn: {pin.theorySectionCode}
-                  </span>
-                )}
-              </div>
-
-              {processedTheorySections.length === 0 ? (
-                <div className="p-4 rounded-2xl bg-[var(--bg-storm)]/30 border border-[var(--border-muted)]/50 text-xs text-[var(--fg-comments)] italic text-center">
-                  Không có lớp lý thuyết riêng (môn thực hành/đồ án)
-                </div>
-              ) : (
-                <div className="grid gap-2.5 sm:grid-cols-2">
-                  {processedTheorySections.map(
-                    ({ section: s, hasConflict, conflictMsg }) => {
-                      const isSelected =
-                        pin.theorySectionCode === s.section_code;
-
-                      return (
-                        <div
-                          key={s.section_code}
-                          onClick={() =>
-                            handleSelectTheorySection(
-                              inspectCourse.code,
-                              s.section_code,
-                            )
-                          }
-                          className={`p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 text-xs space-y-2 relative overflow-hidden ${
-                            isSelected
-                              ? "bg-[var(--color-blue)]/15 border-[var(--color-blue)] shadow-md shadow-[var(--color-blue)]/10 ring-2 ring-[var(--color-blue)]/30"
-                              : hasConflict
-                              ? "bg-[var(--color-red)]/5 hover:bg-[var(--color-red)]/10 border-[var(--color-red)]/30 opacity-80 hover:opacity-100"
-                              : "bg-[var(--bg-storm)]/40 hover:bg-[var(--bg-storm)] border-[var(--border-muted)] hover:border-[var(--color-blue)]/50"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between font-bold">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`font-mono text-sm ${isSelected ? "text-[var(--color-blue)] font-bold" : hasConflict ? "text-[var(--color-red)]" : "text-[var(--fg-editor)]"}`}
-                              >
-                                {s.section_code}
-                              </span>
-                            </div>
-                            <span className="text-[var(--fg-markdown)] font-semibold">
-                              Thứ{" "}
-                              {s.day_of_week === 8 ? "CN" : s.day_of_week}{" "}
-                              • Tiết {s.periods.join(", ")}
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[var(--fg-comments)] text-[11px] pt-1.5 border-t border-[var(--border-muted)]/40">
-                            <div>
-                              Phòng:{" "}
-                              <strong className="text-[var(--fg-editor)]">
-                                {s.room || "-"}
-                              </strong>
-                            </div>
-                            <div className="text-right">
-                              Sĩ số:{" "}
-                              <strong className="text-[var(--fg-editor)]">
-                                {s.capacity || "-"}
-                              </strong>
-                            </div>
-                            <div className="col-span-2 truncate">
-                              GV:{" "}
-                              <strong className="text-[var(--fg-editor)]">
-                                {s.instructor_name || "Chưa phân công"}
-                              </strong>
-                            </div>
-                            {(s.startDate || s.endDate) && (
-                              <div className="col-span-2 text-[10px] text-[var(--fg-comments)] font-mono">
-                                Thời gian: {s.startDate || "?"} → {s.endDate || "?"}
-                              </div>
-                            )}
-                          </div>
-
-                          {hasConflict && conflictMsg && (
-                            <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-red)] font-bold pt-1 border-t border-[var(--color-red)]/20">
-                              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                              <span className="truncate">{conflictMsg}</span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    },
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* 2. Lab Sections */}
-            {inspectCourse.labSections.length > 0 && (
-              <div>
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--color-orange)] flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4" />
-                      2. Lớp Thực hành
-                    </h4>
-                    {pin.theorySectionCode && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-blue)]/10 text-[var(--color-blue)] font-bold">
-                        Tương ứng với {pin.theorySectionCode}
+                {/* Modal Header */}
+                <div className="p-5 sm:p-6 border-b border-[var(--border-muted)] flex items-start justify-between bg-[var(--bg-storm)]/60 gap-4">
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-blue)] shrink-0" />
+                      <h3 className="text-base sm:text-lg font-bold text-[var(--fg-editor)] tracking-tight truncate">
+                        {inspectCourse.name}
+                      </h3>
+                    </div>
+                    <p className="text-xs text-[var(--fg-comments)] flex flex-wrap items-center gap-2">
+                      <span>
+                        Mã môn:{" "}
+                        <strong className="font-mono text-[var(--fg-editor)]">
+                          {inspectCourse.code}
+                        </strong>
                       </span>
-                    )}
+                      <span>•</span>
+                      <span>
+                        <strong>{inspectCourse.totalCredits}</strong> tín chỉ (
+                        {inspectCourse.baseCredits} LT +{" "}
+                        {inspectCourse.labCredits} TH)
+                      </span>
+                      {inspectCourse.departments.length > 0 && (
+                        <>
+                          <span>•</span>
+                          <span>
+                            Khoa: {inspectCourse.departments.join(", ")}
+                          </span>
+                        </>
+                      )}
+                    </p>
                   </div>
 
-                  {pin.labSectionCode && (
-                    <span className="text-[11px] font-bold text-[var(--color-orange)]">
-                      ✓ {pin.labSectionCode}
-                    </span>
-                  )}
+                  <button
+                    onClick={() => setInspectCourse(null)}
+                    className="p-2 rounded-full text-[var(--fg-comments)] hover:text-[var(--fg-editor)] hover:bg-[var(--bg-storm)] transition-colors shrink-0"
+                    title="Đóng (Esc)"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
 
-                {processedLabSections.length === 0 ? (
-                  <div className="p-4 rounded-2xl bg-[var(--bg-storm)]/30 border border-[var(--border-muted)]/50 text-xs text-[var(--fg-comments)] text-center space-y-2">
-                    <p>
-                      Không có lớp thực hành nào tương ứng với mã lớp LT{" "}
-                      <strong>{pin.theorySectionCode}</strong>.
-                    </p>
+                {/* Pin Banner / Instruction */}
+                <div className="px-5 py-3 bg-[var(--bg-storm)]/40 border-b border-[var(--border-muted)]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <Pin className="w-4 h-4 text-[var(--color-blue)] shrink-0" />
+                    <span className="text-[var(--fg-editor)]">
+                      {hasPin ? (
+                        <span>
+                          Đang cố định:{" "}
+                          <strong className="text-[var(--color-blue)] font-mono">
+                            {[pin.theorySectionCode, pin.labSectionCode]
+                              .filter(Boolean)
+                              .join(" + ")}
+                          </strong>
+                        </span>
+                      ) : (
+                        <span className="text-[var(--fg-comments)]">
+                          Nhấp vào mã lớp bên dưới để{" "}
+                          <strong>chỉ định lớp học cụ thể</strong> (hệ thống sẽ
+                          tự liên kết lớp LT và TH tương ứng).
+                        </span>
+                      )}
+                    </span>
+                  </div>
+
+                  {hasPin && (
                     <button
                       type="button"
-                      onClick={() =>
-                        handleSelectTheorySection(
-                          inspectCourse.code,
-                          pin.theorySectionCode!,
-                        )
-                      }
-                      className="text-[var(--color-blue)] hover:underline font-bold text-xs"
+                      onClick={() => handleResetCoursePin(inspectCourse.code)}
+                      className="px-3 py-1 rounded-lg bg-[var(--bg-storm)] hover:bg-[var(--border-muted)] text-[var(--fg-editor)] font-bold text-[11px] flex items-center gap-1 shrink-0 transition-colors"
                     >
-                      Bỏ chọn lớp LT để xem tất cả lớp TH
+                      <RotateCcw className="w-3 h-3" /> Đặt lại Tự động
                     </button>
-                  </div>
-                ) : (
-                  <div className="grid gap-2.5 sm:grid-cols-2">
-                    {processedLabSections.map(
-                      ({ section: s, hasConflict, conflictMsg }) => {
-                        const isSelected =
-                          pin.labSectionCode === s.section_code;
+                  )}
+                </div>
 
-                        return (
-                          <div
-                            key={s.section_code}
-                            onClick={() =>
-                              handleSelectLabSection(
-                                inspectCourse.code,
-                                s.section_code,
-                              )
-                            }
-                            className={`p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 text-xs space-y-2 relative overflow-hidden ${
-                              isSelected
-                                ? "bg-[var(--color-orange)]/15 border-[var(--color-orange)] shadow-md shadow-[var(--color-orange)]/10 ring-2 ring-[var(--color-orange)]/30"
-                                : hasConflict
-                                ? "bg-[var(--color-red)]/5 hover:bg-[var(--color-red)]/10 border-[var(--color-red)]/30 opacity-80 hover:opacity-100"
-                                : "bg-[var(--color-orange)]/5 hover:bg-[var(--color-orange)]/10 border-[var(--color-orange)]/25 hover:border-[var(--color-orange)]/50"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between font-bold">
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className={`font-mono text-sm ${isSelected ? "text-[var(--color-orange)] font-bold" : hasConflict ? "text-[var(--color-red)]" : "text-[var(--fg-editor)]"}`}
-                                >
-                                  {s.section_code}
-                                </span>
-                              </div>
-                              <span className="text-[var(--fg-markdown)] font-semibold">
-                                Thứ{" "}
-                                {s.day_of_week === 8
-                                  ? "CN"
-                                  : s.day_of_week}{" "}
-                                • Tiết {s.periods.join(", ")}
-                              </span>
-                            </div>
+                {/* Modal Body */}
+                <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 custom-scrollbar">
+                  {/* 1. Theory Sections */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--color-blue)] flex items-center gap-1.5">
+                        <Layers className="w-4 h-4" />
+                        1. Lớp Lý thuyết
+                      </h4>
+                      {pin.theorySectionCode && (
+                        <span className="text-[11px] font-bold text-[var(--color-blue)]">
+                          ✓ Đã chọn: {pin.theorySectionCode}
+                        </span>
+                      )}
+                    </div>
 
-                            <div className="space-y-1.5 text-[var(--fg-comments)] text-[11px] pt-1.5 border-t border-[var(--color-orange)]/20">
-                              <div className="grid grid-cols-2 gap-x-2">
-                                <div>
-                                  Phòng:{" "}
-                                  <strong className="text-[var(--fg-editor)]">
-                                    {s.room || "-"}
-                                  </strong>
-                                </div>
-                                <div className="text-right">
-                                  Sĩ số:{" "}
-                                  <strong className="text-[var(--fg-editor)]">
-                                    {s.capacity || "-"}
-                                  </strong>
-                                </div>
-                              </div>
-                              <div className="truncate">
-                                GV/Trợ giảng:{" "}
-                                <strong className="text-[var(--fg-editor)]">
-                                  {s.instructor_name || "Chưa phân công"}
-                                </strong>
-                              </div>
-                              {(s.startDate || s.endDate) && (
-                                <div className="text-[10px] text-[var(--fg-comments)] font-mono">
-                                  Thời gian: {s.startDate || "?"} → {s.endDate || "?"}
-                                </div>
-                              )}
-                              <div className="flex items-center gap-1.5">
-                                {s.biweekly ? (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--color-blue)]/15 text-[var(--color-blue)] font-bold text-[10px]">
-                                    Cách tuần
+                    {processedTheorySections.length === 0 ? (
+                      <div className="p-4 rounded-2xl bg-[var(--bg-storm)]/30 border border-[var(--border-muted)]/50 text-xs text-[var(--fg-comments)] italic text-center">
+                        Không có lớp lý thuyết riêng (môn thực hành/đồ án)
+                      </div>
+                    ) : (
+                      <div className="grid gap-2.5 sm:grid-cols-2">
+                        {processedTheorySections.map(
+                          ({ section: s, hasConflict, conflictMsg }) => {
+                            const isSelected =
+                              pin.theorySectionCode === s.section_code;
+
+                            return (
+                              <div
+                                key={s.section_code}
+                                onClick={() =>
+                                  handleSelectTheorySection(
+                                    inspectCourse.code,
+                                    s.section_code,
+                                  )
+                                }
+                                className={`p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 text-xs space-y-2 relative overflow-hidden ${
+                                  isSelected
+                                    ? "bg-[var(--color-blue)]/15 border-[var(--color-blue)] shadow-md shadow-[var(--color-blue)]/10 ring-2 ring-[var(--color-blue)]/30"
+                                    : hasConflict
+                                      ? "bg-[var(--color-red)]/5 hover:bg-[var(--color-red)]/10 border-[var(--color-red)]/30 opacity-80 hover:opacity-100"
+                                      : "bg-[var(--bg-storm)]/40 hover:bg-[var(--bg-storm)] border-[var(--border-muted)] hover:border-[var(--color-blue)]/50"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between font-bold">
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`font-mono text-sm ${isSelected ? "text-[var(--color-blue)] font-bold" : hasConflict ? "text-[var(--color-red)]" : "text-[var(--fg-editor)]"}`}
+                                    >
+                                      {s.section_code}
+                                    </span>
+                                  </div>
+                                  <span className="text-[var(--fg-markdown)] font-semibold">
+                                    Thứ{" "}
+                                    {s.day_of_week === 8 ? "CN" : s.day_of_week}{" "}
+                                    • Tiết {s.periods.join(", ")}
                                   </span>
-                                ) : (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--bg-storm)] text-[var(--fg-comments)] text-[10px]">
-                                    Hàng tuần
-                                  </span>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[var(--fg-comments)] text-[11px] pt-1.5 border-t border-[var(--border-muted)]/40">
+                                  <div>
+                                    Phòng:{" "}
+                                    <strong className="text-[var(--fg-editor)]">
+                                      {s.room || "-"}
+                                    </strong>
+                                  </div>
+                                  <div className="text-right">
+                                    Sĩ số:{" "}
+                                    <strong className="text-[var(--fg-editor)]">
+                                      {s.capacity || "-"}
+                                    </strong>
+                                  </div>
+                                  <div className="col-span-2 truncate">
+                                    GV:{" "}
+                                    <strong className="text-[var(--fg-editor)]">
+                                      {s.instructor_name || "Chưa phân công"}
+                                    </strong>
+                                  </div>
+                                  {(s.startDate || s.endDate) && (
+                                    <div className="col-span-2 text-[10px] text-[var(--fg-comments)] font-mono">
+                                      Thời gian: {s.startDate || "?"} →{" "}
+                                      {s.endDate || "?"}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {hasConflict && conflictMsg && (
+                                  <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-red)] font-bold pt-1 border-t border-[var(--color-red)]/20">
+                                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                    <span className="truncate">
+                                      {conflictMsg}
+                                    </span>
+                                  </div>
                                 )}
                               </div>
-                            </div>
-
-                            {hasConflict && conflictMsg && (
-                              <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-red)] font-bold pt-1 border-t border-[var(--color-red)]/20">
-                                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                                <span className="truncate">
-                                  {conflictMsg}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      },
+                            );
+                          },
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
-            )}
-          </div>
+
+                  {/* 2. Lab Sections */}
+                  {inspectCourse.labSections.length > 0 && (
+                    <div>
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--color-orange)] flex items-center gap-1.5">
+                            <Calendar className="w-4 h-4" />
+                            2. Lớp Thực hành
+                          </h4>
+                          {pin.theorySectionCode && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-blue)]/10 text-[var(--color-blue)] font-bold">
+                              Tương ứng với {pin.theorySectionCode}
+                            </span>
+                          )}
+                        </div>
+
+                        {pin.labSectionCode && (
+                          <span className="text-[11px] font-bold text-[var(--color-orange)]">
+                            ✓ {pin.labSectionCode}
+                          </span>
+                        )}
+                      </div>
+
+                      {processedLabSections.length === 0 ? (
+                        <div className="p-4 rounded-2xl bg-[var(--bg-storm)]/30 border border-[var(--border-muted)]/50 text-xs text-[var(--fg-comments)] text-center space-y-2">
+                          <p>
+                            Không có lớp thực hành nào tương ứng với mã lớp LT{" "}
+                            <strong>{pin.theorySectionCode}</strong>.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleSelectTheorySection(
+                                inspectCourse.code,
+                                pin.theorySectionCode!,
+                              )
+                            }
+                            className="text-[var(--color-blue)] hover:underline font-bold text-xs"
+                          >
+                            Bỏ chọn lớp LT để xem tất cả lớp TH
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="grid gap-2.5 sm:grid-cols-2">
+                          {processedLabSections.map(
+                            ({ section: s, hasConflict, conflictMsg }) => {
+                              const isSelected =
+                                pin.labSectionCode === s.section_code;
+
+                              return (
+                                <div
+                                  key={s.section_code}
+                                  onClick={() =>
+                                    handleSelectLabSection(
+                                      inspectCourse.code,
+                                      s.section_code,
+                                    )
+                                  }
+                                  className={`p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 text-xs space-y-2 relative overflow-hidden ${
+                                    isSelected
+                                      ? "bg-[var(--color-orange)]/15 border-[var(--color-orange)] shadow-md shadow-[var(--color-orange)]/10 ring-2 ring-[var(--color-orange)]/30"
+                                      : hasConflict
+                                        ? "bg-[var(--color-red)]/5 hover:bg-[var(--color-red)]/10 border-[var(--color-red)]/30 opacity-80 hover:opacity-100"
+                                        : "bg-[var(--color-orange)]/5 hover:bg-[var(--color-orange)]/10 border-[var(--color-orange)]/25 hover:border-[var(--color-orange)]/50"
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between font-bold">
+                                    <div className="flex items-center gap-2">
+                                      <span
+                                        className={`font-mono text-sm ${isSelected ? "text-[var(--color-orange)] font-bold" : hasConflict ? "text-[var(--color-red)]" : "text-[var(--fg-editor)]"}`}
+                                      >
+                                        {s.section_code}
+                                      </span>
+                                    </div>
+                                    <span className="text-[var(--fg-markdown)] font-semibold">
+                                      Thứ{" "}
+                                      {s.day_of_week === 8
+                                        ? "CN"
+                                        : s.day_of_week}{" "}
+                                      • Tiết {s.periods.join(", ")}
+                                    </span>
+                                  </div>
+
+                                  <div className="space-y-1.5 text-[var(--fg-comments)] text-[11px] pt-1.5 border-t border-[var(--color-orange)]/20">
+                                    <div className="grid grid-cols-2 gap-x-2">
+                                      <div>
+                                        Phòng:{" "}
+                                        <strong className="text-[var(--fg-editor)]">
+                                          {s.room || "-"}
+                                        </strong>
+                                      </div>
+                                      <div className="text-right">
+                                        Sĩ số:{" "}
+                                        <strong className="text-[var(--fg-editor)]">
+                                          {s.capacity || "-"}
+                                        </strong>
+                                      </div>
+                                    </div>
+                                    <div className="truncate">
+                                      GV/Trợ giảng:{" "}
+                                      <strong className="text-[var(--fg-editor)]">
+                                        {s.instructor_name || "Chưa phân công"}
+                                      </strong>
+                                    </div>
+                                    {(s.startDate || s.endDate) && (
+                                      <div className="text-[10px] text-[var(--fg-comments)] font-mono">
+                                        Thời gian: {s.startDate || "?"} →{" "}
+                                        {s.endDate || "?"}
+                                      </div>
+                                    )}
+                                    <div className="flex items-center gap-1.5">
+                                      {s.biweekly ? (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--color-blue)]/15 text-[var(--color-blue)] font-bold text-[10px]">
+                                          Cách tuần
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--bg-storm)] text-[var(--fg-comments)] text-[10px]">
+                                          Hàng tuần
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {hasConflict && conflictMsg && (
+                                    <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-red)] font-bold pt-1 border-t border-[var(--color-red)]/20">
+                                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                      <span className="truncate">
+                                        {conflictMsg}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            },
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {/* Modal Footer */}
                 <div className="p-4 sm:p-5 border-t border-[var(--border-muted)] bg-[var(--bg-storm)]/60 flex items-center justify-between gap-3">

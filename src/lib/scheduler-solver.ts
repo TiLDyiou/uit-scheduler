@@ -239,48 +239,7 @@ export function solveSchedule({
       }
     }
 
-    const options: CourseOption[] = [];
-
-    if (Object.keys(theorySections).length > 0) {
-      for (const [sc, ts] of Object.entries(theorySections)) {
-        const matchingLabs = labSections[sc] || [];
-
-        if (theoryRequiresLab.has(sc)) {
-          // Both theory and lab are mandatory for this section
-          if (matchingLabs.length > 0) {
-            for (const lab of matchingLabs) {
-              // Ensure theory and lab do not collide with each other
-              const collides = doSectionsOverlap(ts, lab);
-              if (!collides) {
-                options.push({
-                  course_code: cc,
-                  sections: [ts, lab],
-                });
-              }
-            }
-          }
-        } else {
-          // Pure theory course without required lab
-          options.push({
-            course_code: cc,
-            sections: [ts],
-          });
-        }
-      }
-    } else if (Object.keys(labSections).length > 0) {
-      // Pure lab course (no separate theory)
-      for (const labList of Object.values(labSections)) {
-        for (const lab of labList) {
-          options.push({
-            course_code: cc,
-            sections: [lab],
-          });
-        }
-      }
-    }
-
-    // 5. Apply pinned/selected specific sections if any
-    let finalOptions = options;
+    // Check if user specifically pinned a section for this course
     const baseCC = getBaseCourseCode(cc);
     const pinnedCourse =
       pinned_sections?.[cc] ||
@@ -301,6 +260,95 @@ export function solveSchedule({
           (p.labSectionCode &&
             sects.some((s) => s.section_code === p.labSectionCode))
       );
+
+    const options: CourseOption[] = [];
+
+    if (Object.keys(theorySections).length > 0) {
+      for (const [sc, ts] of Object.entries(theorySections)) {
+        const matchingLabs = labSections[sc] || [];
+
+        if (theoryRequiresLab.has(sc)) {
+          // Both theory and lab are mandatory for this section
+          if (matchingLabs.length > 0) {
+            // Find target lab: if a specific lab is pinned, use it;
+            // otherwise, pick TH.1 (e.g. *.1, *.TH1, *.TH.1) as TH.1 and TH.2 share the same schedule day/periods.
+            const pinnedLabCode =
+              pinnedCourse?.labSectionCode ||
+              pinned_section_codes.find((p) =>
+                matchingLabs.some((l) => l.section_code === p)
+              );
+
+            let selectedLabs: Section[] = [];
+            if (pinnedLabCode) {
+              const matched = matchingLabs.find(
+                (l) => l.section_code === pinnedLabCode
+              );
+              if (matched) selectedLabs = [matched];
+            }
+
+            if (selectedLabs.length === 0) {
+              const th1 =
+                matchingLabs.find((l) =>
+                  /\.(1|th1|th\.1|t1)$/i.test(l.section_code)
+                ) || matchingLabs[0];
+              if (th1) selectedLabs = [th1];
+            }
+
+            for (const lab of selectedLabs) {
+              // Ensure theory and lab do not collide with each other
+              const collides = doSectionsOverlap(ts, lab);
+              if (!collides) {
+                options.push({
+                  course_code: cc,
+                  sections: [ts, lab],
+                });
+              }
+            }
+          }
+        } else {
+          // Pure theory course without required lab
+          options.push({
+            course_code: cc,
+            sections: [ts],
+          });
+        }
+      }
+    } else if (Object.keys(labSections).length > 0) {
+      // Pure lab course (no separate theory)
+      for (const [, labList] of Object.entries(labSections)) {
+        const pinnedLabCode =
+          pinnedCourse?.labSectionCode ||
+          pinned_section_codes.find((p) =>
+            labList.some((l) => l.section_code === p)
+          );
+
+        let selectedLabs: Section[] = [];
+        if (pinnedLabCode) {
+          const matched = labList.find(
+            (l) => l.section_code === pinnedLabCode
+          );
+          if (matched) selectedLabs = [matched];
+        }
+
+        if (selectedLabs.length === 0) {
+          const th1 =
+            labList.find((l) =>
+              /\.(1|th1|th\.1|t1)$/i.test(l.section_code)
+            ) || labList[0];
+          if (th1) selectedLabs = [th1];
+        }
+
+        for (const lab of selectedLabs) {
+          options.push({
+            course_code: cc,
+            sections: [lab],
+          });
+        }
+      }
+    }
+
+    // 5. Apply pinned/selected specific sections if any
+    let finalOptions = options;
 
     if (
       pinnedCourse &&
