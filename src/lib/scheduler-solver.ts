@@ -89,15 +89,27 @@ export function calculateSolutionStats(sections: Section[]): {
     }
   }
 
-  // Calculate unique course credits (avoid double counting when theory and lab each have full credits)
-  const courseCredits: Record<string, number> = {};
+  // Calculate unique course credits (theory credits + lab credits for each unique course)
+  const courseCredits: Record<string, { theory: number; lab: number }> = {};
   for (const s of sections) {
     const baseCode = getBaseCourseCode(s.course_code);
-    if (!courseCredits[baseCode] || s.credits > courseCredits[baseCode]) {
-      courseCredits[baseCode] = s.credits;
+    if (!courseCredits[baseCode]) {
+      courseCredits[baseCode] = { theory: 0, lab: 0 };
+    }
+    if (s.is_lab) {
+      if (s.credits > courseCredits[baseCode].lab) {
+        courseCredits[baseCode].lab = s.credits;
+      }
+    } else {
+      if (s.credits > courseCredits[baseCode].theory) {
+        courseCredits[baseCode].theory = s.credits;
+      }
     }
   }
-  const totalCredits = Object.values(courseCredits).reduce((a, b) => a + b, 0);
+  const totalCredits = Object.values(courseCredits).reduce(
+    (sum, c) => sum + c.theory + c.lab,
+    0
+  );
 
   // Calculate gaps between periods on the same day
   let totalGaps = 0;
